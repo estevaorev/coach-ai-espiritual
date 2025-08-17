@@ -34,7 +34,7 @@ google_api_key = get_api_key()
 
 def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
     """
-    Gera uma mensagem espiritual usando a API do Google Gemini.
+    Gera uma mensagem espiritual e um versículo de apoio usando a API do Google Gemini.
 
     Args:
         api_key: A chave de API do Google.
@@ -76,7 +76,7 @@ def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
         }
         tom_formatado = mapa_tons.get(tom_escolhido, "acolhedor(a)")
 
-        # O prompt que será enviado ao modelo, combinando as instruções do seu código Colab
+        # O prompt que será enviado ao modelo, agora com a instrução para adicionar um versículo
         prompt = f"""
             Você é um Coach Espiritual. Seu propósito é gerar uma mensagem personalizada para um usuário.
 
@@ -86,15 +86,12 @@ def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
             1. Analise o sentimento do usuário.
             2. Gere uma mensagem de conforto, inspiração ou perspectiva, conforme apropriado.
             3. **Use um tom {tom_formatado} na sua resposta.**
-            4. **Sua linguagem deve ser inclusiva e respeitosa com diversas visões espirituais e filosóficas.**
-            5. Responda de forma direta ao usuário. Não inclua saudações como "Olá" ou "Aqui está sua mensagem". Vá direto para a mensagem espiritual.
-
-            **Exemplos de conteúdo que você pode usar como referência:**
-            - Citações, pequenos textos, parábolas, afirmações, trechos de livros.
+            4. Sua linguagem deve ser inclusiva e respeitosa com diversas visões espirituais e filosóficas.
+            5. Responda de forma direta ao usuário. Não inclua saudações como "Olá". Vá direto para a mensagem espiritual.
+            6. **Ao final da sua mensagem, inclua um versículo bíblico de apoio (com livro, capítulo e número) que se relacione com a mensagem e a necessidade do usuário. Apresente-o sob o título "📖 Versículo de Apoio:"**
 
             **Regras Importantes:**
             - Evite conselhos não solicitados ou soluções diretas para problemas. O foco é no apoio emocional e espiritual.
-            - Mantenha a mensagem relativamente breve e impactante.
         """
 
         # Gera o conteúdo
@@ -147,7 +144,8 @@ if st.button("Receber Mensagem"):
 
         # Exibe a mensagem gerada
         st.success("Aqui está uma mensagem para você:")
-        st.markdown(f"> ❝ {mensagem} ❞")
+        # O st.markdown interpreta a formatação de negrito e quebras de linha que o modelo enviar
+        st.markdown(mensagem)
 
 # --- Rodapé ---
 st.markdown("---")
