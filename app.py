@@ -73,11 +73,11 @@ def gerar_imagem_reflexiva(api_key, sentimento_usuario):
         # 1. Cria um prompt descritivo e artístico para o modelo de imagem
         prompt_para_imagem = f"Uma pintura digital bela e simbólica que captura a essência do sentimento de '{sentimento_usuario}'. A imagem deve ser etérea, abstrata e transmitir uma sensação de esperança, paz e reflexão interior. Estilo de arte: fantasia conceitual, cores suaves e luz brilhante."
 
-        # 2. Faz a chamada de API para o Imagen 3 com a URL corrigida
-        api_url = f"https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-002:generateImage?key={api_key}"
+        # 2. Faz a chamada de API para o Imagen 3 com a URL e payload corrigidos
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
         payload = {
-            "prompt": prompt_para_imagem,
-            "sample_count": 1
+            "instances": [{"prompt": prompt_para_imagem}],
+            "parameters": {"sampleCount": 1}
         }
         headers = {"Content-Type": "application/json"}
 
@@ -86,15 +86,17 @@ def gerar_imagem_reflexiva(api_key, sentimento_usuario):
         result = response.json()
 
         # 3. Decodifica a imagem recebida em base64
-        if "images" in result and len(result["images"]) > 0 and "b64_json" in result["images"][0]:
-            base64_image = result["images"][0]["b64_json"]
+        if "predictions" in result and len(result["predictions"]) > 0 and "bytesBase64Encoded" in result["predictions"][0]:
+            base64_image = result["predictions"][0]["bytesBase64Encoded"]
             image_bytes = base64.b64decode(base64_image)
             return image_bytes
         else:
             print("Resposta da API de imagem inesperada:", result)
             return None
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao chamar a API de imagem: {e.response.text if e.response else e}")
+        print(f"Erro ao chamar a API de imagem: {e}")
+        if e.response:
+            print(f"Detalhes do erro da API: {e.response.text}")
         return None
     except Exception as e:
         print(f"Ocorreu um erro na geração da imagem: {e}")
