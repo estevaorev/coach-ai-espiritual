@@ -34,7 +34,7 @@ google_api_key = get_api_key()
 
 def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
     """
-    Gera uma mensagem espiritual e um versículo de apoio usando a API do Google Gemini.
+    Gera uma mensagem, um versículo e uma oração usando a API do Google Gemini.
 
     Args:
         api_key: A chave de API do Google.
@@ -51,7 +51,7 @@ def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
         # Configurações do modelo
         generation_config = {
             "candidate_count": 1,
-            "temperature": 0.8,
+            "temperature": 0.9, # Aumentei um pouco para mais criatividade na oração
             "top_p": 0.9,
         }
         safety_settings = {
@@ -76,22 +76,21 @@ def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
         }
         tom_formatado = mapa_tons.get(tom_escolhido, "acolhedor(a)")
 
-        # O prompt que será enviado ao modelo, agora com a instrução para adicionar um versículo
+        # O prompt que será enviado ao modelo, agora com a instrução para a oração
         prompt = f"""
             Você é um Coach Espiritual. Seu propósito é gerar uma mensagem personalizada para um usuário.
 
             **Contexto do Usuário:** Ele descreveu o seguinte estado/necessidade: "{sentimento_usuario}"
 
-            **Sua Tarefa:**
-            1. Analise o sentimento do usuário.
-            2. Gere uma mensagem de conforto, inspiração ou perspectiva, conforme apropriado.
-            3. **Use um tom {tom_formatado} na sua resposta.**
-            4. Sua linguagem deve ser inclusiva e respeitosa com diversas visões espirituais e filosóficas.
-            5. Responda de forma direta ao usuário. Não inclua saudações como "Olá". Vá direto para a mensagem espiritual.
-            6. **Ao final da sua mensagem, inclua um versículo bíblico de apoio (com livro, capítulo e número) que se relacione com a mensagem e a necessidade do usuário. Apresente-o sob o título "📖 Versículo de Apoio:"**
+            **Sua Tarefa (siga esta ordem exata):**
+            1.  **Mensagem Principal:** Gere uma mensagem de conforto, inspiração ou perspectiva. **Use um tom {tom_formatado} na sua resposta.**
+            2.  **Versículo de Apoio:** Inclua um versículo bíblico de apoio que se relacione com a mensagem. Apresente-o sob o título "**📖 Versículo de Apoio:**".
+            3.  **Oração Guiada:** Crie uma oração em primeira pessoa (usando "eu", "meu", "minha") que o usuário possa ler como se fosse sua própria prece, refletindo a necessidade dele. Apresente-a sob o título "**🙏 Oração Guiada:**".
 
-            **Regras Importantes:**
-            - Evite conselhos não solicitados ou soluções diretas para problemas. O foco é no apoio emocional e espiritual.
+            **Regras de Estilo:**
+            - Sua linguagem deve ser inclusiva e respeitosa.
+            - Responda de forma direta. Não inclua saudações como "Olá".
+            - Evite conselhos não solicitados. O foco é no apoio emocional e espiritual.
         """
 
         # Gera o conteúdo
