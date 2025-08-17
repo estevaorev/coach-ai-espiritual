@@ -14,11 +14,6 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 # Injetamos CSS para customizar a aparência da aplicação.
-def local_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# Criamos um arquivo CSS virtual dentro do Python
 css = """
 /* Fundo com gradiente suave */
 [data-testid="stAppViewContainer"] > .main {
@@ -36,10 +31,10 @@ css = """
     backdrop-filter: blur(10px); /* Efeito de vidro fosco */
 }
 
-/* Estilo do título principal */
+/* Estilo do título principal - AUMENTADO */
 .title {
     text-align: center;
-    font-size: 3em;
+    font-size: 4.5em; /* Aumentado de 3em para 4.5em */
     font-weight: bold;
     color: #2c3e50;
     padding-top: 20px;
@@ -50,7 +45,7 @@ css = """
     text-align: center;
     font-size: 1.2em;
     color: #34495e;
-    margin-bottom: 30px;
+    margin-bottom: 40px; /* Aumentado o espaçamento inferior */
 }
 
 /* Estilo do botão principal */
@@ -165,28 +160,27 @@ def buscar_imagem_no_unsplash(api_key, keywords):
 st.markdown('<p class="title">✨ CoachAI Espiritual ✨</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
 
-# Usamos um container para agrupar os controles de entrada
-with st.container():
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("1. Escolha o tom do seu guia")
-        tom = st.radio(
-            "Que tipo de guia você prefere hoje?",
-            ["amigo", "sábio", "direto"],
-            captions=["Uma conversa calorosa e empática.", "Uma reflexão profunda e calma.", "Uma mensagem clara e objetiva."],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-    with col2:
-        st.subheader("2. Descreva sua necessidade")
-        sentimento_input = st.text_area(
-            "Como você está se sentindo ou o que você busca?",
-            placeholder="Ex: 'Estou me sentindo um pouco triste hoje' ou 'Preciso de inspiração para começar o dia'",
-            height=130,
-            label_visibility="collapsed"
-        )
+# Usamos colunas para centralizar os controles de entrada
+_, col_controles, _ = st.columns([1, 2, 1])
+with col_controles:
+    st.subheader("1. Escolha o tom do seu guia")
+    tom = st.radio(
+        "Que tipo de guia você prefere hoje?",
+        ["amigo", "sábio", "direto"],
+        captions=["Uma conversa calorosa e empática.", "Uma reflexão profunda e calma.", "Uma mensagem clara e objetiva."],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
 
-# Centraliza o botão usando uma coluna
+    st.subheader("2. Descreva sua necessidade")
+    sentimento_input = st.text_area(
+        "Como você está se sentindo ou o que você busca?",
+        placeholder="Ex: 'Estou me sentindo um pouco triste hoje' ou 'Preciso de inspiração para começar o dia'",
+        height=130,
+        label_visibility="collapsed"
+    )
+
+# Centraliza o botão
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
     if st.button("Receber Mensagem", use_container_width=True):
