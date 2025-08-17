@@ -1,7 +1,7 @@
 ✨ CoachAI Espiritual ✨
 Seu assistente pessoal para bem-estar interior, inspiração e reflexão, agora com uma interface web interativa!
 
-🚀 Acesse a Aplicação Ao Vivo Clicando Aqui 🚀
+🚀 Acesse a Aplicação Ao Vivo Clicando Aqui https://coach-ai-espiritual.streamlit.app/🚀
 📖 Sobre o Projeto
 O CoachAI Espiritual é um chatbot interativo projetado para oferecer suporte espiritual acessível e personalizado. Utilizando o poder da Inteligência Artificial Generativa do Google (Gemini), esta aplicação web gera mensagens de conforto, versículos de apoio, orações guiadas e imagens reflexivas para auxiliar os usuários em sua jornada de autoconhecimento e bem-estar.
 
