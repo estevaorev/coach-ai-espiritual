@@ -29,7 +29,7 @@ Linguagem: Python
 
 Framework Web: Streamlit
 
-IA de Texto: Google Gemini 1.5 Flash
+IA de Texto: Google Gemini 2.5 Flash
 
 API de Imagens: Unsplash API
 
