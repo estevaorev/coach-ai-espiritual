@@ -101,8 +101,6 @@ unsplash_api_key = api_keys.get('unsplash')
 def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
     try:
         genai.configure(api_key=api_key)
-        # --- ALTERAÇÃO AQUI ---
-        # Atualizado o nome do modelo para a versão mais recente do Flash.
         model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-05-20")
         mapa_tons = {
             "amigo": "amigo(a) e acolhedor(a)",
@@ -116,7 +114,7 @@ def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
             Sua tarefa é retornar um objeto JSON com 4 chaves: "mensagem", "versiculo", "oracao", "keywords".
 
             1.  **mensagem**: Crie uma mensagem de conforto/inspiração com um tom {tom_formatado}.
-            2.  **versiculo**: Forneça um versículo bíblico de apoio (livro, capítulo, número).
+            2.  **versiculo**: Forneça o texto completo de um versículo bíblico de apoio, seguido pela referência entre parênteses. (Exemplo: "O Senhor é o meu pastor; nada me faltará. (Salmo 23:1)").
             3.  **oracao**: Escreva uma oração guiada em primeira pessoa.
             4.  **keywords**: Forneça uma string com 3 a 4 palavras-chave em INGLÊS, separadas por vírgula, que representem visualmente o sentimento do usuário de forma abstrata e simbólica (ex: hope, light, path, faith, peace).
 
