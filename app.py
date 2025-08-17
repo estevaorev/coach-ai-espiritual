@@ -1,6 +1,8 @@
 # Importa as bibliotecas necessárias
 import streamlit as st
 import google.generativeai as genai
+import requests
+import base64
 import time
 
 # --- Configuração da Página ---
@@ -30,45 +32,15 @@ def get_api_key():
 google_api_key = get_api_key()
 
 
-# --- Lógica do Modelo Gemini ---
+# --- Lógica do Modelo de Texto (Gemini) ---
 
 def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
     """
     Gera uma mensagem, um versículo e uma oração usando a API do Google Gemini.
-
-    Args:
-        api_key: A chave de API do Google.
-        sentimento_usuario: O texto que o usuário inseriu sobre como se sente.
-        tom_escolhido: O tom que o chatbot deve usar ('amigo', 'sábio', 'direto').
-
-    Returns:
-        A mensagem gerada pelo modelo ou uma mensagem de erro.
     """
     try:
-        # Configura a API key
         genai.configure(api_key=api_key)
-
-        # Configurações do modelo
-        generation_config = {
-            "candidate_count": 1,
-            "temperature": 0.9, # Aumentei um pouco para mais criatividade na oração
-            "top_p": 0.9,
-        }
-        safety_settings = {
-            "HARASSMENT": "BLOCK_NONE",
-            "HATE": "BLOCK_NONE",
-            "SEXUAL": "BLOCK_NONE",
-            "DANGEROUS": "BLOCK_NONE",
-        }
-
-        # Inicializa o modelo
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            generation_config=generation_config,
-            safety_settings=safety_settings
-        )
-
-        # Mapeia a escolha do tom para uma instrução mais detalhada
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
         mapa_tons = {
             "amigo": "amigo(a) e acolhedor(a)",
             "sábio": "sábio(a) e reflexivo(a)",
@@ -76,43 +48,65 @@ def gerar_mensagem_espiritual(api_key, sentimento_usuario, tom_escolhido):
         }
         tom_formatado = mapa_tons.get(tom_escolhido, "acolhedor(a)")
 
-        # O prompt que será enviado ao modelo, agora com a instrução para a oração
         prompt = f"""
             Você é um Coach Espiritual. Seu propósito é gerar uma mensagem personalizada para um usuário.
-
-            **Contexto do Usuário:** Ele descreveu o seguinte estado/necessidade: "{sentimento_usuario}"
-
-            **Sua Tarefa (siga esta ordem exata):**
-            1.  **Mensagem Principal:** Gere uma mensagem de conforto, inspiração ou perspectiva. **Use um tom {tom_formatado} na sua resposta.**
-            2.  **Versículo de Apoio:** Inclua um versículo bíblico de apoio que se relacione com a mensagem. Apresente-o sob o título "**📖 Versículo de Apoio:**".
-            3.  **Oração Guiada:** Crie uma oração em primeira pessoa (usando "eu", "meu", "minha") que o usuário possa ler como se fosse sua própria prece, refletindo a necessidade dele. Apresente-a sob o título "**🙏 Oração Guiada:**".
-
-            **Regras de Estilo:**
-            - Sua linguagem deve ser inclusiva e respeitosa.
-            - Responda de forma direta. Não inclua saudações como "Olá".
-            - Evite conselhos não solicitados. O foco é no apoio emocional e espiritual.
+            Contexto do Usuário: Ele descreveu o seguinte estado/necessidade: "{sentimento_usuario}"
+            Sua Tarefa (siga esta ordem exata):
+            1.  **Mensagem Principal:** Gere uma mensagem de conforto, inspiração ou perspectiva. Use um tom {tom_formatado}.
+            2.  **Versículo de Apoio:** Inclua um versículo bíblico de apoio. Apresente-o sob o título "**📖 Versículo de Apoio:**".
+            3.  **Oração Guiada:** Crie uma oração em primeira pessoa. Apresente-a sob o título "**🙏 Oração Guiada:**".
+            Regras de Estilo: Linguagem inclusiva, resposta direta, sem conselhos não solicitados.
         """
-
-        # Gera o conteúdo
         response = model.generate_content(prompt)
         return response.text
-
     except Exception as e:
-        # Retorna uma mensagem de erro amigável
-        print(f"Ocorreu um erro: {e}")
-        return "Desculpe, não consegui gerar uma mensagem no momento. Verifique sua chave de API e tente novamente."
+        print(f"Ocorreu um erro no Gemini: {e}")
+        return "Desculpe, não consegui gerar a mensagem de texto no momento."
+
+# --- Lógica do Modelo de Imagem (Imagen) ---
+
+def gerar_imagem_reflexiva(api_key, sentimento_usuario):
+    """
+    Gera uma imagem simbólica e reflexiva usando a API do Imagen 3.
+    """
+    try:
+        # 1. Cria um prompt descritivo e artístico para o modelo de imagem
+        prompt_para_imagem = f"Uma pintura digital bela e simbólica que captura a essência do sentimento de '{sentimento_usuario}'. A imagem deve ser etérea, abstrata e transmitir uma sensação de esperança, paz e reflexão interior. Estilo de arte: fantasia conceitual, cores suaves e luz brilhante."
+
+        # 2. Faz a chamada de API para o Imagen 3
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
+        payload = {
+            "instances": [{"prompt": prompt_para_imagem}],
+            "parameters": {"sampleCount": 1}
+        }
+        headers = {"Content-Type": "application/json"}
+
+        response = requests.post(api_url, json=payload, headers=headers)
+        response.raise_for_status()  # Lança um erro para respostas ruins (4xx ou 5xx)
+        result = response.json()
+
+        # 3. Decodifica a imagem recebida em base64
+        if "predictions" in result and len(result["predictions"]) > 0 and "bytesBase64Encoded" in result["predictions"][0]:
+            base64_image = result["predictions"][0]["bytesBase64Encoded"]
+            image_bytes = base64.b64decode(base64_image)
+            return image_bytes
+        else:
+            print("Resposta da API de imagem inesperada:", result)
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao chamar a API de imagem: {e}")
+        return None
+    except Exception as e:
+        print(f"Ocorreu um erro na geração da imagem: {e}")
+        return None
 
 
 # --- Interface do Usuário (UI) ---
 
-# Título principal da aplicação
 st.title("✨ CoachAI Espiritual ✨")
-
-# Subtítulo ou descrição
 st.markdown("Seu assistente pessoal para bem-estar interior e reflexão.")
 st.markdown("---")
 
-# Seleção do Tom
 st.subheader("1. Escolha o tom do seu guia")
 tom = st.radio(
     "Que tipo de guia você prefere hoje?",
@@ -121,7 +115,6 @@ tom = st.radio(
     horizontal=True
 )
 
-# Campo para o usuário descrever o sentimento
 st.subheader("2. Descreva sua necessidade")
 sentimento_input = st.text_area(
     "Como você está se sentindo ou o que você busca?",
@@ -129,22 +122,27 @@ sentimento_input = st.text_area(
     height=100
 )
 
-# Botão para gerar a mensagem
 if st.button("Receber Mensagem"):
-    # Validações antes de chamar a API
     if not google_api_key:
         st.error("Por favor, insira sua Google API Key na barra lateral ou configure-a nos segredos da aplicação.")
     elif not sentimento_input:
         st.warning("Por favor, descreva como você está se sentindo.")
     else:
-        # Mostra uma mensagem de "pensando..."
+        # Gerar e exibir conteúdo de texto
         with st.spinner("Conectando-se com a sabedoria do universo..."):
             mensagem = gerar_mensagem_espiritual(google_api_key, sentimento_input, tom)
-
-        # Exibe a mensagem gerada
         st.success("Aqui está uma mensagem para você:")
-        # O st.markdown interpreta a formatação de negrito e quebras de linha que o modelo enviar
         st.markdown(mensagem)
+        st.markdown("---")
+
+        # Gerar e exibir conteúdo de imagem
+        with st.spinner("Criando uma imagem para sua reflexão..."):
+            imagem_bytes = gerar_imagem_reflexiva(google_api_key, sentimento_input)
+
+        if imagem_bytes:
+            st.image(imagem_bytes, caption="Uma imagem para sua reflexão.")
+        else:
+            st.warning("Não foi possível gerar a imagem reflexiva no momento.")
 
 # --- Rodapé ---
 st.markdown("---")
