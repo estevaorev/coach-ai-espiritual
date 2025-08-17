@@ -101,7 +101,9 @@ unsplash_api_key = api_keys.get('unsplash')
 def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+        # --- ALTERAÇÃO AQUI ---
+        # Atualizado o nome do modelo para a versão mais recente do Flash.
+        model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-05-20")
         mapa_tons = {
             "amigo": "amigo(a) e acolhedor(a)",
             "sábio": "sábio(a) e reflexivo(a)",
