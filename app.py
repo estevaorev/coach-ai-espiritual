@@ -99,36 +99,26 @@ unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
 # --- Lógica do Contador de Visitas com Firebase ---
-@st.cache_resource
-def init_firebase_connection(credentials_dict, database_url):
-    """Função em cache para inicializar a ligação ao Firebase apenas uma vez."""
-    try:
-        cred = credentials.Certificate(credentials_dict)
-        firebase_admin.initialize_app(cred, {'databaseURL': database_url})
-        return "Conectado"
-    except ValueError:
-        return "Conectado" # Já foi inicializado
-    except Exception as e:
-        return f"Falha: {e}"
+def init_firebase_app(credentials_dict, database_url):
+    """Inicializa a aplicação Firebase se ainda não foi inicializada."""
+    if not firebase_admin._apps:
+        try:
+            cred = credentials.Certificate(credentials_dict)
+            firebase_admin.initialize_app(cred, {'databaseURL': database_url})
+            return "Conectado"
+        except Exception as e:
+            return f"Falha: {e}"
+    return "Conectado"
 
-def increment_visitor_count():
-    """Incrementa o contador de visitas na base de dados."""
+def increment_and_get_visitor_count():
+    """Incrementa o contador de visitas e retorna o valor atual."""
     try:
         if firebase_admin._apps:
             ref = db.reference('visits')
-            ref.transaction(lambda current_value: (current_value or 0) + 1)
+            # A transação é a forma mais segura de incrementar e ler
+            return ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
-        print(f"Erro ao incrementar o contador: {e}")
-
-@st.cache_data(ttl=60) # Cache do resultado por 60 segundos
-def get_visitor_count():
-    """Busca o valor atual do contador de visitas."""
-    try:
-        if firebase_admin._apps:
-            ref = db.reference('visits')
-            return ref.get()
-    except Exception as e:
-        print(f"Erro ao buscar o contador: {e}")
+        print(f"Erro ao aceder ao contador: {e}")
         return None
 
 # Inicializa o Firebase e gere o estado da conexão
@@ -138,12 +128,12 @@ firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
 
 if firebase_creds and firebase_url:
-    firebase_status = init_firebase_connection(firebase_creds, firebase_url)
+    firebase_status = init_firebase_app(firebase_creds, firebase_url)
     if firebase_status == "Conectado":
         if 'visitor_counted' not in st.session_state:
-            increment_visitor_count()
+            st.session_state.total_visits = increment_and_get_visitor_count()
             st.session_state.visitor_counted = True
-        total_visits = get_visitor_count()
+        total_visits = st.session_state.get('total_visits')
 
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
