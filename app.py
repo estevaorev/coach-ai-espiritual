@@ -103,10 +103,16 @@ def init_firebase_app(credentials_dict, database_url):
     """Inicializa a aplicação Firebase se ainda não foi inicializada."""
     if not firebase_admin._apps:
         try:
+            # --- CORREÇÃO AQUI ---
+            # Corrige a formatação da private_key que vem dos segredos do Streamlit
+            if "private_key" in credentials_dict:
+                credentials_dict["private_key"] = credentials_dict["private_key"].replace('\\n', '\n')
+            
             cred = credentials.Certificate(credentials_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': database_url})
             return "Conectado"
         except Exception as e:
+            # Mostra o erro real para facilitar a depuração
             return f"Falha: {e}"
     return "Conectado"
 
@@ -115,7 +121,6 @@ def increment_and_get_visitor_count():
     try:
         if firebase_admin._apps:
             ref = db.reference('visits')
-            # A transação é a forma mais segura de incrementar e ler
             return ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
         print(f"Erro ao aceder ao contador: {e}")
