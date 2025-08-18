@@ -83,7 +83,6 @@ def get_api_keys():
         keys['google'] = st.secrets["GOOGLE_API_KEY"]
         keys['unsplash'] = st.secrets["UNSPLASH_API_KEY"]
         keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"]
-        # Carrega as credenciais do Firebase a partir dos segredos do Streamlit
         keys['firebase_credentials'] = st.secrets["firebase"]["credentials"]
         keys['firebase_database_url'] = st.secrets["firebase"]["databaseURL"]
     except (FileNotFoundError, KeyError):
@@ -100,25 +99,22 @@ unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
 # --- Lógica do Contador de Visitas com Firebase ---
-@st.cache_resource
 def init_firebase_app(credentials_dict, database_url):
     """Inicializa a aplicação Firebase."""
     try:
-        # Verifica se as credenciais têm o campo 'type' para evitar reinicialização com dict vazio
-        if credentials_dict and credentials_dict.get("type"):
-            cred = credentials.Certificate(credentials_dict)
-            firebase_admin.initialize_app(cred, {'databaseURL': database_url})
-            return True
+        cred = credentials.Certificate(credentials_dict)
+        firebase_admin.initialize_app(cred, {'databaseURL': database_url})
+    except ValueError:
+        # A app já foi inicializada, o que é esperado em reruns do Streamlit.
+        pass
     except Exception as e:
-        print(f"Erro ao inicializar o Firebase: {e}")
-    return False
+        st.error(f"Erro crítico ao inicializar o banco de dados: {e}")
 
 def update_visitor_count():
     """Incrementa o contador de visitas e retorna o valor atualizado."""
     try:
-        if firebase_admin._apps: # Verifica se a app foi inicializada
+        if firebase_admin._apps:
             ref = db.reference('visits')
-            # Usa uma transação para garantir que a atualização seja atômica
             def increment(current_value):
                 return current_value + 1 if current_value else 1
             return ref.transaction(increment)
@@ -130,7 +126,10 @@ def update_visitor_count():
 firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
 if firebase_creds and firebase_url:
-    init_firebase_app(firebase_creds, firebase_url)
+    # A verificação principal é esta: só inicializar se não houver apps a correr
+    if not firebase_admin._apps:
+        init_firebase_app(firebase_creds, firebase_url)
+
     # Incrementa o contador na sessão do usuário
     if 'visitor_counted' not in st.session_state:
         st.session_state.visitor_count = update_visitor_count()
