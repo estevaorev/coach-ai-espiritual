@@ -3,6 +3,8 @@ import streamlit as st
 import google.generativeai as genai
 import requests
 import json
+import firebase_admin
+from firebase_admin import credentials, db
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -74,24 +76,22 @@ div[data-testid="stButton"] > button:hover {
 st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
-# --- Configuração das API Keys ---
+# --- Configuração das API Keys e Firebase ---
 def get_api_keys():
     keys = {}
     try:
         keys['google'] = st.secrets["GOOGLE_API_KEY"]
         keys['unsplash'] = st.secrets["UNSPLASH_API_KEY"]
-        keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"] # Nova chave
+        keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"]
+        # Carrega as credenciais do Firebase a partir dos segredos do Streamlit
+        keys['firebase_credentials'] = st.secrets["firebase"]["credentials"]
+        keys['firebase_database_url'] = st.secrets["firebase"]["databaseURL"]
     except (FileNotFoundError, KeyError):
         st.sidebar.header("🔑 Configuração de API Keys")
-        keys['google'] = st.sidebar.text_input(
-            "Sua Google API Key", type="password", help="Obtenha no Google AI Studio."
-        )
-        keys['unsplash'] = st.sidebar.text_input(
-            "Sua Unsplash API Key", type="password", help="Obtenha no Unsplash for Developers."
-        )
-        keys['formspree'] = st.sidebar.text_input(
-            "Seu Endpoint do Formspree", type="password", help="Obtenha no site do Formspree."
-        )
+        keys['google'] = st.sidebar.text_input("Sua Google API Key", type="password")
+        keys['unsplash'] = st.sidebar.text_input("Sua Unsplash API Key", type="password")
+        keys['formspree'] = st.sidebar.text_input("Seu Endpoint do Formspree", type="password")
+        st.sidebar.warning("A configuração do Firebase (contador de visitas) só funciona em produção.")
     return keys
 
 api_keys = get_api_keys()
@@ -99,36 +99,58 @@ google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
+# --- Lógica do Contador de Visitas com Firebase ---
+@st.cache_resource
+def init_firebase_app(credentials_dict, database_url):
+    """Inicializa a aplicação Firebase."""
+    try:
+        # Verifica se as credenciais têm o campo 'type' para evitar reinicialização com dict vazio
+        if credentials_dict and credentials_dict.get("type"):
+            cred = credentials.Certificate(credentials_dict)
+            firebase_admin.initialize_app(cred, {'databaseURL': database_url})
+            return True
+    except Exception as e:
+        print(f"Erro ao inicializar o Firebase: {e}")
+    return False
+
+def update_visitor_count():
+    """Incrementa o contador de visitas e retorna o valor atualizado."""
+    try:
+        if firebase_admin._apps: # Verifica se a app foi inicializada
+            ref = db.reference('visits')
+            # Usa uma transação para garantir que a atualização seja atômica
+            def increment(current_value):
+                return current_value + 1 if current_value else 1
+            return ref.transaction(increment)
+    except Exception as e:
+        print(f"Erro ao atualizar o contador: {e}")
+        return None
+
+# Inicializa o Firebase (apenas se as credenciais estiverem disponíveis)
+firebase_creds = api_keys.get('firebase_credentials')
+firebase_url = api_keys.get('firebase_database_url')
+if firebase_creds and firebase_url:
+    init_firebase_app(firebase_creds, firebase_url)
+    # Incrementa o contador na sessão do usuário
+    if 'visitor_counted' not in st.session_state:
+        st.session_state.visitor_count = update_visitor_count()
+        st.session_state.visitor_counted = True
+
 
 # --- Lógica do Modelo de Texto (Gemini) ---
 def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-05-20")
-        mapa_tons = {
-            "amigo": "amigo(a) e acolhedor(a)",
-            "sábio": "sábio(a) e reflexivo(a)",
-            "direto": "direto(a) e conciso(a)"
-        }
+        mapa_tons = {"amigo": "amigo(a) e acolhedor(a)", "sábio": "sábio(a) e reflexivo(a)", "direto": "direto(a) e conciso(a)"}
         tom_formatado = mapa_tons.get(tom_escolhido, "acolhedor(a)")
-
-        prompt = f"""
-            Você é um Coach Espiritual. Analise o sentimento do usuário: "{sentimento_usuario}".
+        prompt = f"""Você é um Coach Espiritual. Analise o sentimento do usuário: "{sentimento_usuario}".
             Sua tarefa é retornar um objeto JSON com 4 chaves: "mensagem", "versiculo", "oracao", "keywords".
-
             1.  **mensagem**: Crie uma mensagem de conforto/inspiração com um tom {tom_formatado}.
             2.  **versiculo**: Forneça o texto completo de um versículo bíblico de apoio, seguido pela referência entre parênteses. (Exemplo: "O Senhor é o meu pastor; nada me faltará. (Salmo 23:1)").
             3.  **oracao**: Escreva uma oração guiada em primeira pessoa.
-            4.  **keywords**: Forneça uma string com 3 a 4 palavras-chave em INGLÊS, separadas por vírgula, que representem visualmente o sentimento do usuário de forma abstrata e simbólica (ex: hope, light, path, faith, peace).
-
-            O JSON deve ter exatamente este formato:
-            {{
-              "mensagem": "...",
-              "versiculo": "...",
-              "oracao": "...",
-              "keywords": "..."
-            }}
-        """
+            4.  **keywords**: Forneça uma string com 3 a 4 palavras-chave em INGLÊS, separadas por vírgula, que representem visualmente o sentimento do usuário.
+            O JSON deve ter exatamente este formato: {{"mensagem": "...", "versiculo": "...", "oracao": "...", "keywords": "..."}}"""
         response = model.generate_content(prompt)
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
         return json.loads(cleaned_response)
@@ -140,13 +162,7 @@ def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
 def buscar_imagem_no_unsplash(api_key, keywords):
     try:
         api_url = "https://api.unsplash.com/search/photos"
-        params = {
-            "query": keywords,
-            "page": 1,
-            "per_page": 1,
-            "orientation": "landscape",
-            "client_id": api_key
-        }
+        params = {"query": keywords, "page": 1, "per_page": 1, "orientation": "landscape", "client_id": api_key}
         response = requests.get(api_url, params=params)
         response.raise_for_status()
         data = response.json()
@@ -169,28 +185,15 @@ def enviar_feedback(endpoint, email, tipo, mensagem):
         return False
 
 # --- Interface do Usuário (UI) ---
-
 st.markdown('<p class="title">✨ CoachAI Espiritual ✨</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
 
 _, col_controles, _ = st.columns([1, 2, 1])
 with col_controles:
     st.subheader("1. Escolha o tom do seu guia")
-    tom = st.radio(
-        "Que tipo de guia você prefere hoje?",
-        ["amigo", "sábio", "direto"],
-        captions=["Uma conversa calorosa e empática.", "Uma reflexão profunda e calma.", "Uma mensagem clara e objetiva."],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
+    tom = st.radio("Tom do Guia", ["amigo", "sábio", "direto"], horizontal=True, label_visibility="collapsed")
     st.subheader("2. Descreva sua necessidade")
-    sentimento_input = st.text_area(
-        "Como você está se sentindo ou o que você busca?",
-        placeholder="Ex: 'Estou me sentindo um pouco triste hoje' ou 'Preciso de inspiração para começar o dia'",
-        height=130,
-        label_visibility="collapsed"
-    )
+    sentimento_input = st.text_area("Necessidade", placeholder="Ex: 'Estou me sentindo um pouco triste hoje'", height=130, label_visibility="collapsed")
 
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
@@ -203,13 +206,11 @@ with col_button:
             conteudo_gerado = None
             with st.spinner("Conectando-se com a sabedoria do universo..."):
                 conteudo_gerado = gerar_conteudo_espiritual(google_api_key, sentimento_input, tom)
-
             if conteudo_gerado:
                 st.success("Aqui está uma mensagem para você:")
                 col_texto, col_imagem = st.columns([1.5, 1])
                 with col_texto:
-                    st.markdown(f"""
-                    <div class="content-card">
+                    st.markdown(f"""<div class="content-card">
                         <p>{conteudo_gerado["mensagem"]}</p><hr>
                         <p><b>📖 Versículo de Apoio:</b> {conteudo_gerado['versiculo']}</p><hr>
                         <p><b>🙏 Oração Guiada:</b> {conteudo_gerado['oracao']}</p>
@@ -219,8 +220,7 @@ with col_button:
                     with st.spinner("Buscando uma imagem para sua reflexão..."):
                         image_url = buscar_imagem_no_unsplash(unsplash_api_key, conteudo_gerado["keywords"])
                     if image_url:
-                        st.markdown(f"""
-                        <div class="content-card">
+                        st.markdown(f"""<div class="content-card">
                             <img src="{image_url}" style="border-radius: 10px; width: 100%;">
                             <p style="text-align: center; font-style: italic; margin-top: 10px;">Uma imagem para sua reflexão.</p>
                         </div>""", unsafe_allow_html=True)
@@ -236,26 +236,26 @@ with col_form:
     st.subheader("💬 Deixe seu Feedback")
     with st.form(key="feedback_form"):
         feedback_email = st.text_input("Seu e-mail (opcional)")
-        feedback_tipo = st.selectbox(
-            "Tipo de Feedback",
-            ["Elogio", "Crítica Construtiva", "Sugestão de Melhoria", "Relatar um Erro"]
-        )
+        feedback_tipo = st.selectbox("Tipo de Feedback", ["Elogio", "Crítica Construtiva", "Sugestão de Melhoria", "Relatar um Erro"])
         feedback_mensagem = st.text_area("Sua mensagem", height=150)
         submit_button = st.form_submit_button(label="Enviar Feedback")
-
         if submit_button:
             if not formspree_endpoint:
-                st.error("A funcionalidade de feedback não está configurada pelo dono da aplicação.")
+                st.error("A funcionalidade de feedback não está configurada.")
             elif not feedback_mensagem:
                 st.warning("Por favor, escreva uma mensagem antes de enviar.")
             else:
                 if enviar_feedback(formspree_endpoint, feedback_email, feedback_tipo, feedback_mensagem):
                     st.success("Obrigado! Seu feedback foi enviado com sucesso. ❤️")
                 else:
-                    st.error("Desculpe, houve um erro ao enviar seu feedback. Tente novamente.")
-
+                    st.error("Desculpe, houve um erro ao enviar seu feedback.")
 
 # --- Rodapé ---
+st.markdown("---")
+# Exibe o contador de visitas se ele foi carregado com sucesso
+if 'visitor_count' in st.session_state and st.session_state.visitor_count is not None:
+    st.markdown(f"<div style='text-align: center; font-size: 1em; color: #34495e;'>👁️ Visitas Totais: <strong>{st.session_state.visitor_count}</strong></div>", unsafe_allow_html=True)
+
 st.markdown(
     "<div style='text-align: center; font-size: 0.9em; color: #34495e; padding: 20px;'>"
     "Lembre-se: O CoachAI Espiritual é uma ferramenta de apoio e não substitui aconselhamento profissional."
