@@ -99,8 +99,9 @@ unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
 # --- Lógica do Contador de Visitas com Firebase ---
-def init_firebase_app(credentials_dict, database_url):
-    """Inicializa a aplicação Firebase e retorna o estado."""
+@st.cache_resource
+def init_firebase_connection(credentials_dict, database_url):
+    """Função em cache para inicializar a ligação ao Firebase apenas uma vez."""
     try:
         cred = credentials.Certificate(credentials_dict)
         firebase_admin.initialize_app(cred, {'databaseURL': database_url})
@@ -108,18 +109,26 @@ def init_firebase_app(credentials_dict, database_url):
     except ValueError:
         return "Conectado" # Já foi inicializado
     except Exception as e:
-        print(f"Erro crítico ao inicializar o banco de dados: {e}")
-        return f"Falha na Conexão: {e}"
+        return f"Falha: {e}"
 
-def update_and_get_visitor_count():
-    """Incrementa o contador de visitas e retorna o valor atualizado numa única operação."""
+def increment_visitor_count():
+    """Incrementa o contador de visitas na base de dados."""
     try:
         if firebase_admin._apps:
             ref = db.reference('visits')
-            # A função transaction retorna o valor atualizado após a conclusão.
-            return ref.transaction(lambda current_value: (current_value or 0) + 1)
+            ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
-        print(f"Erro ao atualizar e obter o contador: {e}")
+        print(f"Erro ao incrementar o contador: {e}")
+
+@st.cache_data(ttl=60) # Cache do resultado por 60 segundos
+def get_visitor_count():
+    """Busca o valor atual do contador de visitas."""
+    try:
+        if firebase_admin._apps:
+            ref = db.reference('visits')
+            return ref.get()
+    except Exception as e:
+        print(f"Erro ao buscar o contador: {e}")
         return None
 
 # Inicializa o Firebase e gere o estado da conexão
@@ -127,21 +136,14 @@ firebase_status = "Não Configurado"
 total_visits = None
 firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
-if firebase_creds and firebase_url:
-    if not firebase_admin._apps:
-        firebase_status = init_firebase_app(firebase_creds, firebase_url)
-    else:
-        firebase_status = "Conectado"
 
+if firebase_creds and firebase_url:
+    firebase_status = init_firebase_connection(firebase_creds, firebase_url)
     if firebase_status == "Conectado":
         if 'visitor_counted' not in st.session_state:
-            # Chama a nova função única e armazena o resultado
-            total_visits = update_and_get_visitor_count()
+            increment_visitor_count()
             st.session_state.visitor_counted = True
-            st.session_state.total_visits = total_visits # Armazena na sessão
-        else:
-            # Em recarregamentos da página, pega o valor da sessão
-            total_visits = st.session_state.total_visits
+        total_visits = get_visitor_count()
 
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
