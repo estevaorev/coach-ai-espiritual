@@ -111,23 +111,15 @@ def init_firebase_app(credentials_dict, database_url):
         print(f"Erro crítico ao inicializar o banco de dados: {e}")
         return f"Falha na Conexão: {e}"
 
-def increment_visitor_count():
-    """Incrementa o contador de visitas na base de dados."""
+def update_and_get_visitor_count():
+    """Incrementa o contador de visitas e retorna o valor atualizado numa única operação."""
     try:
         if firebase_admin._apps:
             ref = db.reference('visits')
-            ref.transaction(lambda current_value: (current_value or 0) + 1)
+            # A função transaction retorna o valor atualizado após a conclusão.
+            return ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
-        print(f"Erro ao incrementar o contador: {e}")
-
-def get_visitor_count():
-    """Busca o valor atual do contador de visitas."""
-    try:
-        if firebase_admin._apps:
-            ref = db.reference('visits')
-            return ref.get()
-    except Exception as e:
-        print(f"Erro ao buscar o contador: {e}")
+        print(f"Erro ao atualizar e obter o contador: {e}")
         return None
 
 # Inicializa o Firebase e gere o estado da conexão
@@ -143,9 +135,13 @@ if firebase_creds and firebase_url:
 
     if firebase_status == "Conectado":
         if 'visitor_counted' not in st.session_state:
-            increment_visitor_count()
+            # Chama a nova função única e armazena o resultado
+            total_visits = update_and_get_visitor_count()
             st.session_state.visitor_counted = True
-        total_visits = get_visitor_count()
+            st.session_state.total_visits = total_visits # Armazena na sessão
+        else:
+            # Em recarregamentos da página, pega o valor da sessão
+            total_visits = st.session_state.total_visits
 
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
