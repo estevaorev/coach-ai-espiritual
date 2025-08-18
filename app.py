@@ -5,7 +5,6 @@ import requests
 import json
 
 # --- Configuração da Página ---
-# Usando layout "wide" e um ícone de galáxia para um toque mais etéreo.
 st.set_page_config(
     page_title="CoachAI Espiritual",
     page_icon="🌌",
@@ -13,7 +12,6 @@ st.set_page_config(
 )
 
 # --- Estilos CSS Customizados ---
-# Injetamos CSS para customizar a aparência da aplicação.
 css = """
 /* Fundo com gradiente suave */
 [data-testid="stAppViewContainer"] > .main {
@@ -22,19 +20,19 @@ css = """
 
 /* Estilo dos cards de conteúdo */
 .content-card {
-    background-color: rgba(255, 255, 255, 0.6); /* Fundo branco semitransparente */
+    background-color: rgba(255, 255, 255, 0.6);
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px); /* Efeito de vidro fosco */
+    backdrop-filter: blur(10px);
 }
 
-/* Estilo do título principal - AUMENTADO */
+/* Estilo do título principal */
 .title {
     text-align: center;
-    font-size: 4.5em; /* Aumentado de 3em para 4.5em */
+    font-size: 4.5em;
     font-weight: bold;
     color: #2c3e50;
     padding-top: 20px;
@@ -45,7 +43,7 @@ css = """
     text-align: center;
     font-size: 1.2em;
     color: #34495e;
-    margin-bottom: 40px; /* Aumentado o espaçamento inferior */
+    margin-bottom: 40px;
 }
 
 /* Estilo do botão principal */
@@ -82,6 +80,7 @@ def get_api_keys():
     try:
         keys['google'] = st.secrets["GOOGLE_API_KEY"]
         keys['unsplash'] = st.secrets["UNSPLASH_API_KEY"]
+        keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"] # Nova chave
     except (FileNotFoundError, KeyError):
         st.sidebar.header("🔑 Configuração de API Keys")
         keys['google'] = st.sidebar.text_input(
@@ -90,11 +89,15 @@ def get_api_keys():
         keys['unsplash'] = st.sidebar.text_input(
             "Sua Unsplash API Key", type="password", help="Obtenha no Unsplash for Developers."
         )
+        keys['formspree'] = st.sidebar.text_input(
+            "Seu Endpoint do Formspree", type="password", help="Obtenha no site do Formspree."
+        )
     return keys
 
 api_keys = get_api_keys()
 google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
+formspree_endpoint = api_keys.get('formspree')
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
@@ -154,13 +157,22 @@ def buscar_imagem_no_unsplash(api_key, keywords):
         print(f"Ocorreu um erro na busca do Unsplash: {e}")
         return None
 
+# --- Função para Enviar Feedback ---
+def enviar_feedback(endpoint, email, tipo, mensagem):
+    try:
+        headers = {"Content-Type": "application/json"}
+        data = {"email": email, "tipo": tipo, "mensagem": mensagem}
+        response = requests.post(endpoint, json=data, headers=headers)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Erro ao enviar feedback: {e}")
+        return False
+
 # --- Interface do Usuário (UI) ---
 
-# Título e Subtítulo com classes CSS
 st.markdown('<p class="title">✨ CoachAI Espiritual ✨</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
 
-# Usamos colunas para centralizar os controles de entrada
 _, col_controles, _ = st.columns([1, 2, 1])
 with col_controles:
     st.subheader("1. Escolha o tom do seu guia")
@@ -180,12 +192,11 @@ with col_controles:
         label_visibility="collapsed"
     )
 
-# Centraliza o botão
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
     if st.button("Receber Mensagem", use_container_width=True):
         if not google_api_key or not unsplash_api_key:
-            st.error("Por favor, configure ambas as chaves de API na barra lateral.")
+            st.error("Por favor, configure as chaves de API na barra lateral.")
         elif not sentimento_input:
             st.warning("Por favor, descreva como você está se sentindo.")
         else:
@@ -195,37 +206,54 @@ with col_button:
 
             if conteudo_gerado:
                 st.success("Aqui está uma mensagem para você:")
-
-                # Layout em colunas para o resultado
                 col_texto, col_imagem = st.columns([1.5, 1])
-
                 with col_texto:
                     st.markdown(f"""
                     <div class="content-card">
-                        <p>{conteudo_gerado["mensagem"]}</p>
-                        <hr>
-                        <p><b>📖 Versículo de Apoio:</b> {conteudo_gerado['versiculo']}</p>
-                        <hr>
+                        <p>{conteudo_gerado["mensagem"]}</p><hr>
+                        <p><b>📖 Versículo de Apoio:</b> {conteudo_gerado['versiculo']}</p><hr>
                         <p><b>🙏 Oração Guiada:</b> {conteudo_gerado['oracao']}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
+                    </div>""", unsafe_allow_html=True)
                 with col_imagem:
                     image_url = None
                     with st.spinner("Buscando uma imagem para sua reflexão..."):
                         image_url = buscar_imagem_no_unsplash(unsplash_api_key, conteudo_gerado["keywords"])
-
                     if image_url:
                         st.markdown(f"""
                         <div class="content-card">
                             <img src="{image_url}" style="border-radius: 10px; width: 100%;">
                             <p style="text-align: center; font-style: italic; margin-top: 10px;">Uma imagem para sua reflexão.</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        </div>""", unsafe_allow_html=True)
                     else:
                         st.warning("Não foi possível encontrar uma imagem reflexiva no momento.")
             else:
                 st.error("Não foi possível gerar o conteúdo. Tente novamente.")
+
+# --- Seção de Feedback ---
+st.markdown("---")
+_, col_form, _ = st.columns([1, 2, 1])
+with col_form:
+    st.subheader("💬 Deixe seu Feedback")
+    with st.form(key="feedback_form"):
+        feedback_email = st.text_input("Seu e-mail (opcional)")
+        feedback_tipo = st.selectbox(
+            "Tipo de Feedback",
+            ["Elogio", "Crítica Construtiva", "Sugestão de Melhoria", "Relatar um Erro"]
+        )
+        feedback_mensagem = st.text_area("Sua mensagem", height=150)
+        submit_button = st.form_submit_button(label="Enviar Feedback")
+
+        if submit_button:
+            if not formspree_endpoint:
+                st.error("A funcionalidade de feedback não está configurada pelo dono da aplicação.")
+            elif not feedback_mensagem:
+                st.warning("Por favor, escreva uma mensagem antes de enviar.")
+            else:
+                if enviar_feedback(formspree_endpoint, feedback_email, feedback_tipo, feedback_mensagem):
+                    st.success("Obrigado! Seu feedback foi enviado com sucesso. ❤️")
+                else:
+                    st.error("Desculpe, houve um erro ao enviar seu feedback. Tente novamente.")
+
 
 # --- Rodapé ---
 st.markdown(
