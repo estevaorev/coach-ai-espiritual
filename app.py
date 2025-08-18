@@ -111,20 +111,28 @@ def init_firebase_app(credentials_dict, database_url):
         print(f"Erro crítico ao inicializar o banco de dados: {e}")
         return f"Falha na Conexão: {e}"
 
-def update_visitor_count():
-    """Incrementa o contador de visitas e retorna o valor atualizado."""
+def increment_visitor_count():
+    """Incrementa o contador de visitas na base de dados."""
     try:
         if firebase_admin._apps:
             ref = db.reference('visits')
-            def increment(current_value):
-                return current_value + 1 if current_value else 1
-            return ref.transaction(increment)
+            ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
-        print(f"Erro ao atualizar o contador: {e}")
+        print(f"Erro ao incrementar o contador: {e}")
+
+def get_visitor_count():
+    """Busca o valor atual do contador de visitas."""
+    try:
+        if firebase_admin._apps:
+            ref = db.reference('visits')
+            return ref.get()
+    except Exception as e:
+        print(f"Erro ao buscar o contador: {e}")
         return None
 
 # Inicializa o Firebase e gere o estado da conexão
 firebase_status = "Não Configurado"
+total_visits = None
 firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
 if firebase_creds and firebase_url:
@@ -135,8 +143,9 @@ if firebase_creds and firebase_url:
 
     if firebase_status == "Conectado":
         if 'visitor_counted' not in st.session_state:
-            st.session_state.visitor_count = update_visitor_count()
+            increment_visitor_count()
             st.session_state.visitor_counted = True
+        total_visits = get_visitor_count()
 
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
@@ -263,8 +272,8 @@ with col_form:
 # --- Rodapé ---
 st.markdown("---")
 # Exibe o contador de visitas se ele foi carregado com sucesso
-if 'visitor_count' in st.session_state and st.session_state.visitor_count is not None:
-    st.markdown(f"<div style='text-align: center; font-size: 1em; color: #34495e;'>👁️ Visitas Totais: <strong>{st.session_state.visitor_count}</strong></div>", unsafe_allow_html=True)
+if total_visits is not None:
+    st.markdown(f"<div style='text-align: center; font-size: 1em; color: #34495e;'>👁️ Visitas Totais: <strong>{total_visits}</strong></div>", unsafe_allow_html=True)
 
 st.markdown(
     "<div style='text-align: center; font-size: 0.9em; color: #34495e; padding: 20px;'>"
