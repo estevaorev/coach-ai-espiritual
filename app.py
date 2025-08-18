@@ -99,20 +99,22 @@ unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
 # --- Lógica do Contador de Visitas com Firebase ---
-def init_firebase_app(credentials_dict, database_url):
+def init_firebase_app(credentials_info, database_url):
     """Inicializa a aplicação Firebase se ainda não foi inicializada."""
     if not firebase_admin._apps:
         try:
-            # --- CORREÇÃO AQUI ---
-            # Corrige a formatação da private_key que vem dos segredos do Streamlit
-            if "private_key" in credentials_dict:
-                credentials_dict["private_key"] = credentials_dict["private_key"].replace('\\n', '\n')
+            # --- CORREÇÃO FINAL AQUI ---
+            # Cria uma cópia mutável do dicionário de credenciais
+            creds_dict = dict(credentials_info)
             
-            cred = credentials.Certificate(credentials_dict)
+            # Corrige a formatação da private_key na cópia
+            creds_dict["private_key"] = creds_dict["private_key"].replace('\\n', '\n')
+            
+            # Usa a cópia corrigida para inicializar
+            cred = credentials.Certificate(creds_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': database_url})
             return "Conectado"
         except Exception as e:
-            # Mostra o erro real para facilitar a depuração
             return f"Falha: {e}"
     return "Conectado"
 
