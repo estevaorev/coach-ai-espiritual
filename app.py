@@ -100,15 +100,16 @@ formspree_endpoint = api_keys.get('formspree')
 
 # --- Lógica do Contador de Visitas com Firebase ---
 def init_firebase_app(credentials_dict, database_url):
-    """Inicializa a aplicação Firebase."""
+    """Inicializa a aplicação Firebase e retorna o estado."""
     try:
         cred = credentials.Certificate(credentials_dict)
         firebase_admin.initialize_app(cred, {'databaseURL': database_url})
+        return "Conectado"
     except ValueError:
-        # A app já foi inicializada, o que é esperado em reruns do Streamlit.
-        pass
+        return "Conectado" # Já foi inicializado
     except Exception as e:
-        st.error(f"Erro crítico ao inicializar o banco de dados: {e}")
+        print(f"Erro crítico ao inicializar o banco de dados: {e}")
+        return f"Falha na Conexão: {e}"
 
 def update_visitor_count():
     """Incrementa o contador de visitas e retorna o valor atualizado."""
@@ -122,18 +123,28 @@ def update_visitor_count():
         print(f"Erro ao atualizar o contador: {e}")
         return None
 
-# Inicializa o Firebase (apenas se as credenciais estiverem disponíveis)
+# Inicializa o Firebase e gere o estado da conexão
+firebase_status = "Não Configurado"
 firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
 if firebase_creds and firebase_url:
-    # A verificação principal é esta: só inicializar se não houver apps a correr
     if not firebase_admin._apps:
-        init_firebase_app(firebase_creds, firebase_url)
+        firebase_status = init_firebase_app(firebase_creds, firebase_url)
+    else:
+        firebase_status = "Conectado"
 
-    # Incrementa o contador na sessão do usuário
-    if 'visitor_counted' not in st.session_state:
-        st.session_state.visitor_count = update_visitor_count()
-        st.session_state.visitor_counted = True
+    if firebase_status == "Conectado":
+        if 'visitor_counted' not in st.session_state:
+            st.session_state.visitor_count = update_visitor_count()
+            st.session_state.visitor_counted = True
+
+# Adiciona o indicador de estado na barra lateral
+if firebase_creds and firebase_url:
+    if firebase_status == "Conectado":
+        st.sidebar.success("✅ Contador de Visitas: Ativo")
+    else:
+        st.sidebar.error("❌ Contador de Visitas: Falhou")
+        st.sidebar.caption(f"Detalhe: {firebase_status}")
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
