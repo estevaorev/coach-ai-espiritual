@@ -1,3 +1,8 @@
+
+![Banner_CoachAi_Espiritual_v2](https://github.com/user-attachments/assets/57b5815c-96f1-4ea2-856f-226bf095f2a7)
+
+
+
 ✨ CoachAI Espiritual ✨
 Seu assistente pessoal para bem-estar interior, inspiração e reflexão, agora com uma interface web interativa!
 
