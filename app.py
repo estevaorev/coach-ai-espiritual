@@ -294,10 +294,12 @@ if 'last_response' in st.session_state:
         if r_col1.button("👍 Gostei"):
             handle_rating("like")
             st.session_state.rated = True
+            get_ratings_stats.clear() # --- CORREÇÃO AQUI ---
             st.rerun()
         if r_col2.button("👎 Não Gostei"):
             handle_rating("dislike", st.session_state.last_input, st.session_state.last_response)
             st.session_state.rated = True
+            get_ratings_stats.clear() # --- CORREÇÃO AQUI ---
             st.rerun()
     else:
         st.info("Obrigado pelo seu feedback sobre esta mensagem!")
