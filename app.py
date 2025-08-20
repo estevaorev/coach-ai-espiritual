@@ -136,21 +136,28 @@ def increment_and_get_visitor_count():
     """Incrementa o contador de visitas e retorna o valor atual."""
     try:
         if firebase_admin._apps:
-            ref = db.reference('visits')
+            ref = db.reference('stats/visits')
             return ref.transaction(lambda current_value: (current_value or 0) + 1)
     except Exception as e:
-        print(f"Erro ao aceder ao contador: {e}")
+        print(f"Erro ao aceder ao contador de visitas: {e}")
         return None
+
+def increment_message_count():
+    """Incrementa o contador de mensagens geradas."""
+    try:
+        if firebase_admin._apps:
+            ref = db.reference('stats/message_count')
+            ref.transaction(lambda current_value: (current_value or 0) + 1)
+    except Exception as e:
+        print(f"Erro ao incrementar contador de mensagens: {e}")
 
 def handle_rating(rating_type, user_input=None, response_data=None):
     """Processa as avaliações 'like' e 'dislike'."""
     try:
         if firebase_admin._apps:
-            # Incrementa o contador específico ('like_count' ou 'dislike_count')
             counter_ref = db.reference(f'ratings/{rating_type}_count')
             counter_ref.transaction(lambda current_value: (current_value or 0) + 1)
 
-            # Se for um 'dislike', guarda também os detalhes
             if rating_type == 'dislike':
                 details_ref = db.reference('ratings/dislike_details')
                 details_ref.push({
@@ -161,24 +168,28 @@ def handle_rating(rating_type, user_input=None, response_data=None):
     except Exception as e:
         print(f"Erro ao guardar a avaliação '{rating_type}': {e}")
 
-@st.cache_data(ttl=60) # Cache dos resultados por 60 segundos
-def get_ratings_stats():
-    """Busca as contagens de likes e dislikes."""
+@st.cache_data(ttl=30) # Cache dos resultados por 30 segundos
+def get_app_stats():
+    """Busca todas as estatísticas da aplicação (visitas, mensagens, avaliações)."""
     try:
         if firebase_admin._apps:
-            ref = db.reference('ratings')
-            stats = ref.get()
-            if stats:
-                return stats.get('like_count', 0), stats.get('dislike_count', 0)
-        return 0, 0
+            stats_ref = db.reference('stats')
+            ratings_ref = db.reference('ratings')
+            stats = stats_ref.get() or {}
+            ratings = ratings_ref.get() or {}
+            return {
+                "visits": stats.get('visits', 0),
+                "messages": stats.get('message_count', 0),
+                "likes": ratings.get('like_count', 0),
+                "dislikes": ratings.get('dislike_count', 0)
+            }
     except Exception as e:
-        print(f"Erro ao buscar estatísticas de avaliação: {e}")
-        return 0, 0
+        print(f"Erro ao buscar estatísticas: {e}")
+    return {"visits": 0, "messages": 0, "likes": 0, "dislikes": 0}
 
 # Inicializa o Firebase e gere o estado da conexão
 firebase_status = "Não Configurado"
-total_visits = None
-like_count, dislike_count = 0, 0
+app_stats = {"visits": 0, "messages": 0, "likes": 0, "dislikes": 0}
 firebase_creds = api_keys.get('firebase_credentials')
 firebase_url = api_keys.get('firebase_database_url')
 
@@ -188,8 +199,7 @@ if firebase_creds and firebase_url:
         if 'visitor_counted' not in st.session_state:
             st.session_state.total_visits = increment_and_get_visitor_count()
             st.session_state.visitor_counted = True
-        total_visits = st.session_state.get('total_visits')
-        like_count, dislike_count = get_ratings_stats()
+        app_stats = get_app_stats()
 
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
@@ -260,6 +270,8 @@ with col_button:
                 conteudo_gerado = gerar_conteudo_espiritual(google_api_key, sentimento_input, tom)
             
             if conteudo_gerado:
+                increment_message_count() # Incrementa o contador de mensagens
+                get_app_stats.clear() # Limpa o cache para buscar os dados mais recentes
                 st.session_state.last_response = conteudo_gerado
                 st.session_state.last_input = sentimento_input
                 st.session_state.rated = False
@@ -294,12 +306,12 @@ if 'last_response' in st.session_state:
         if r_col1.button("👍 Gostei"):
             handle_rating("like")
             st.session_state.rated = True
-            get_ratings_stats.clear() # --- CORREÇÃO AQUI ---
+            get_app_stats.clear()
             st.rerun()
         if r_col2.button("👎 Não Gostei"):
             handle_rating("dislike", st.session_state.last_input, st.session_state.last_response)
             st.session_state.rated = True
-            get_ratings_stats.clear() # --- CORREÇÃO AQUI ---
+            get_app_stats.clear()
             st.rerun()
     else:
         st.info("Obrigado pelo seu feedback sobre esta mensagem!")
@@ -329,21 +341,25 @@ with col_form:
 
 # --- Rodapé ---
 st.markdown("---")
-# Exibe as estatísticas de satisfação
-if total_visits is not None:
-    st.markdown(f"<div style='text-align: center; font-size: 1em; color: #34495e;'>👁️ Visitas Totais: <strong>{total_visits}</strong></div>", unsafe_allow_html=True)
-
-if like_count is not None and dislike_count is not None:
-    total_ratings = like_count + dislike_count
-    satisfaction_rate = (like_count / total_ratings) if total_ratings > 0 else 1
-    
-    st.markdown(f"""
-    <div style='text-align: center; font-size: 1em; color: #34495e; margin-top: 10px;'>
-        <strong>Taxa de Satisfação ({total_ratings} avaliações)</strong><br>
-        👍 {like_count} Gostaram &nbsp;&nbsp;&nbsp; 👎 {dislike_count} Não Gostaram
+# Exibe as estatísticas da aplicação
+if firebase_status == "Conectado":
+    stats_html = f"""
+    <div style='text-align: center; font-size: 1em; color: #34495e;'>
+        👁️ Visitas: <strong>{app_stats['visits']}</strong> &nbsp;&nbsp;&nbsp; ✉️ Mensagens Geradas: <strong>{app_stats['messages']}</strong>
     </div>
-    """, unsafe_allow_html=True)
-    st.progress(satisfaction_rate)
+    """
+    st.markdown(stats_html, unsafe_allow_html=True)
+
+    total_ratings = app_stats['likes'] + app_stats['dislikes']
+    if total_ratings > 0:
+        satisfaction_rate = app_stats['likes'] / total_ratings
+        st.markdown(f"""
+        <div style='text-align: center; font-size: 1em; color: #34495e; margin-top: 10px;'>
+            <strong>Taxa de Satisfação ({total_ratings} avaliações)</strong><br>
+            👍 {app_stats['likes']} Gostaram &nbsp;&nbsp;&nbsp; 👎 {app_stats['dislikes']} Não Gostaram
+        </div>
+        """, unsafe_allow_html=True)
+        st.progress(satisfaction_rate)
 
 st.markdown(
     "<div style='text-align: center; font-size: 0.9em; color: #34495e; padding: 20px;'>"
