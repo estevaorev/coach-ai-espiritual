@@ -5,6 +5,7 @@ import requests
 import json
 import firebase_admin
 from firebase_admin import credentials, db
+from datetime import datetime
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -109,7 +110,7 @@ def get_api_keys():
         keys['google'] = st.sidebar.text_input("Sua Google API Key", type="password")
         keys['unsplash'] = st.sidebar.text_input("Sua Unsplash API Key", type="password")
         keys['formspree'] = st.sidebar.text_input("Seu Endpoint do Formspree", type="password")
-        st.sidebar.warning("A configuração do Firebase (contador de visitas) só funciona em produção.")
+        st.sidebar.warning("A configuração do Firebase (contador e avaliações) só funciona em produção.")
     return keys
 
 api_keys = get_api_keys()
@@ -117,7 +118,7 @@ google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
 
-# --- Lógica do Contador de Visitas com Firebase ---
+# --- Lógica do Firebase (Contador e Avaliações) ---
 def init_firebase_app(credentials_info, database_url):
     """Inicializa a aplicação Firebase se ainda não foi inicializada."""
     if not firebase_admin._apps:
@@ -141,6 +142,20 @@ def increment_and_get_visitor_count():
         print(f"Erro ao aceder ao contador: {e}")
         return None
 
+def save_rating_to_firebase(user_input, response_data, rating):
+    """Guarda a avaliação da resposta na base de dados."""
+    try:
+        if firebase_admin._apps:
+            ref = db.reference('ratings')
+            ref.push({
+                'user_input': user_input,
+                'response': response_data,
+                'rating': rating,
+                'timestamp': datetime.now().isoformat()
+            })
+    except Exception as e:
+        print(f"Erro ao guardar a avaliação: {e}")
+
 # Inicializa o Firebase e gere o estado da conexão
 firebase_status = "Não Configurado"
 total_visits = None
@@ -158,9 +173,9 @@ if firebase_creds and firebase_url:
 # Adiciona o indicador de estado na barra lateral
 if firebase_creds and firebase_url:
     if firebase_status == "Conectado":
-        st.sidebar.success("✅ Contador de Visitas: Ativo")
+        st.sidebar.success("✅ Base de Dados: Ativa")
     else:
-        st.sidebar.error("❌ Contador de Visitas: Falhou")
+        st.sidebar.error("❌ Base de Dados: Falhou")
         st.sidebar.caption(f"Detalhe: {firebase_status}")
 
 
@@ -174,9 +189,9 @@ def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
         prompt = f"""Você é um Coach Espiritual. Analise o sentimento do usuário: "{sentimento_usuario}".
             Sua tarefa é retornar um objeto JSON com 4 chaves: "mensagem", "versiculo", "oracao", "keywords".
             1.  **mensagem**: Crie uma mensagem de conforto/inspiração com um tom {tom_formatado}.
-            2.  **versiculo**: Forneça o texto completo de um versículo bíblico de apoio, seguido pela referência entre parênteses. (Exemplo: "O Senhor é o meu pastor; nada me faltará. (Salmo 23:1)").
+            2.  **versiculo**: Forneça o texto completo de um versículo bíblico de apoio, seguido pela referência entre parênteses.
             3.  **oracao**: Escreva uma oração guiada em primeira pessoa.
-            4.  **keywords**: Forneça uma string com 3 a 4 palavras-chave em INGLÊS, separadas por vírgula, que representem visualmente o sentimento do usuário.
+            4.  **keywords**: Forneça uma string com 3 a 4 palavras-chave em INGLÊS, separadas por vírgula, para a imagem.
             O JSON deve ter exatamente este formato: {{"mensagem": "...", "versiculo": "...", "oracao": "...", "keywords": "..."}}"""
         response = model.generate_content(prompt)
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
@@ -222,44 +237,64 @@ with col_button:
             conteudo_gerado = None
             with st.spinner("Conectando-se com a sabedoria do universo..."):
                 conteudo_gerado = gerar_conteudo_espiritual(google_api_key, sentimento_input, tom)
+            
+            # Guarda o resultado na sessão para poder ser avaliado
             if conteudo_gerado:
-                st.success("Aqui está uma mensagem para você:")
-                col_texto, col_imagem = st.columns([1.5, 1])
-                with col_texto:
-                    st.markdown(f"""<div class="content-card">
-                        <p>{conteudo_gerado["mensagem"]}</p><hr>
-                        <p><b>📖 Versículo de Apoio:</b> {conteudo_gerado['versiculo']}</p><hr>
-                        <p><b>🙏 Oração Guiada:</b> {conteudo_gerado['oracao']}</p>
-                    </div>""", unsafe_allow_html=True)
-                with col_imagem:
-                    image_url = None
-                    with st.spinner("Buscando uma imagem para sua reflexão..."):
-                        image_url = buscar_imagem_no_unsplash(unsplash_api_key, conteudo_gerado["keywords"])
-                    if image_url:
-                        st.markdown(f"""<div class="content-card">
-                            <img src="{image_url}" style="border-radius: 10px; width: 100%;">
-                            <p style="text-align: center; font-style: italic; margin-top: 10px;">Uma imagem para sua reflexão.</p>
-                        </div>""", unsafe_allow_html=True)
-                    else:
-                        st.warning("Não foi possível encontrar uma imagem reflexiva no momento.")
-            else:
-                st.error("Não foi possível gerar o conteúdo. Tente novamente.")
+                st.session_state.last_response = conteudo_gerado
+                st.session_state.last_input = sentimento_input
+                st.session_state.rated = False # Reseta o estado de avaliação
 
-# --- Seção de Feedback ---
+# --- Exibição do Conteúdo Gerado ---
+if 'last_response' in st.session_state:
+    conteudo_gerado = st.session_state.last_response
+    st.success("Aqui está uma mensagem para você:")
+    col_texto, col_imagem = st.columns([1.5, 1])
+    with col_texto:
+        st.markdown(f"""<div class="content-card">
+            <p>{conteudo_gerado["mensagem"]}</p><hr>
+            <p><b>📖 Versículo de Apoio:</b> {conteudo_gerado['versiculo']}</p><hr>
+            <p><b>🙏 Oração Guiada:</b> {conteudo_gerado['oracao']}</p>
+        </div>""", unsafe_allow_html=True)
+    with col_imagem:
+        image_url = None
+        with st.spinner("Buscando uma imagem para sua reflexão..."):
+            image_url = buscar_imagem_no_unsplash(unsplash_api_key, conteudo_gerado["keywords"])
+        if image_url:
+            st.markdown(f"""<div class="content-card">
+                <img src="{image_url}" style="border-radius: 10px; width: 100%;">
+                <p style="text-align: center; font-style: italic; margin-top: 10px;">Uma imagem para sua reflexão.</p>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.warning("Não foi possível encontrar uma imagem reflexiva no momento.")
+
+    # --- Seção de Avaliação da Resposta (Like/Dislike) ---
+    if not st.session_state.get('rated', False):
+        st.write("A resposta foi útil?")
+        r_col1, r_col2, r_col3 = st.columns([1,1,5])
+        if r_col1.button("👍 Gostei"):
+            save_rating_to_firebase(st.session_state.last_input, st.session_state.last_response, "like")
+            st.session_state.rated = True
+            st.rerun()
+        if r_col2.button("👎 Não Gostei"):
+            save_rating_to_firebase(st.session_state.last_input, st.session_state.last_response, "dislike")
+            st.session_state.rated = True
+            st.rerun()
+    else:
+        st.info("Obrigado pelo seu feedback sobre esta mensagem!")
+
+
+# --- Seção de Feedback Geral ---
 st.markdown("---")
 _, col_form, _ = st.columns([1, 2, 1])
 with col_form:
-    st.subheader("💬 Deixe seu Feedback")
+    st.subheader("💬 Deixe seu Feedback Geral")
     if formspree_endpoint:
         form_html = f"""
         <div class="feedback-form">
             <form action="{formspree_endpoint}" method="POST">
                 <input type="email" name="email" placeholder="Seu e-mail (opcional)">
                 <select name="tipo">
-                    <option>Elogio</option>
-                    <option>Crítica Construtiva</option>
-                    <option>Sugestão de Melhoria</option>
-                    <option>Relatar um Erro</option>
+                    <option>Elogio</option><option>Crítica Construtiva</option><option>Sugestão de Melhoria</option><option>Relatar um Erro</option>
                 </select>
                 <textarea name="message" placeholder="Sua mensagem" required></textarea>
                 <button type="submit">Enviar Feedback</button>
@@ -272,7 +307,6 @@ with col_form:
 
 # --- Rodapé ---
 st.markdown("---")
-# Exibe o contador de visitas se ele foi carregado com sucesso
 if total_visits is not None:
     st.markdown(f"<div style='text-align: center; font-size: 1em; color: #34495e;'>👁️ Visitas Totais: <strong>{total_visits}</strong></div>", unsafe_allow_html=True)
 
