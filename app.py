@@ -72,6 +72,25 @@ div[data-testid="stButton"] > button:hover {
     display: flex;
     justify-content: center;
 }
+
+/* Estilos para o formulário HTML */
+.feedback-form input, .feedback-form select, .feedback-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.feedback-form button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
 """
 st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
@@ -103,14 +122,8 @@ def init_firebase_app(credentials_info, database_url):
     """Inicializa a aplicação Firebase se ainda não foi inicializada."""
     if not firebase_admin._apps:
         try:
-            # --- CORREÇÃO FINAL AQUI ---
-            # Cria uma cópia mutável do dicionário de credenciais
             creds_dict = dict(credentials_info)
-            
-            # Corrige a formatação da private_key na cópia
             creds_dict["private_key"] = creds_dict["private_key"].replace('\\n', '\n')
-            
-            # Usa a cópia corrigida para inicializar
             cred = credentials.Certificate(creds_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': database_url})
             return "Conectado"
@@ -187,17 +200,6 @@ def buscar_imagem_no_unsplash(api_key, keywords):
         print(f"Ocorreu um erro na busca do Unsplash: {e}")
         return None
 
-# --- Função para Enviar Feedback ---
-def enviar_feedback(endpoint, email, tipo, mensagem):
-    try:
-        headers = {"Content-Type": "application/json"}
-        data = {"email": email, "tipo": tipo, "mensagem": mensagem}
-        response = requests.post(endpoint, json=data, headers=headers)
-        return response.status_code == 200
-    except Exception as e:
-        print(f"Erro ao enviar feedback: {e}")
-        return False
-
 # --- Interface do Usuário (UI) ---
 st.markdown('<p class="title">✨ CoachAI Espiritual ✨</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
@@ -248,21 +250,25 @@ st.markdown("---")
 _, col_form, _ = st.columns([1, 2, 1])
 with col_form:
     st.subheader("💬 Deixe seu Feedback")
-    with st.form(key="feedback_form"):
-        feedback_email = st.text_input("Seu e-mail (opcional)")
-        feedback_tipo = st.selectbox("Tipo de Feedback", ["Elogio", "Crítica Construtiva", "Sugestão de Melhoria", "Relatar um Erro"])
-        feedback_mensagem = st.text_area("Sua mensagem", height=150)
-        submit_button = st.form_submit_button(label="Enviar Feedback")
-        if submit_button:
-            if not formspree_endpoint:
-                st.error("A funcionalidade de feedback não está configurada.")
-            elif not feedback_mensagem:
-                st.warning("Por favor, escreva uma mensagem antes de enviar.")
-            else:
-                if enviar_feedback(formspree_endpoint, feedback_email, feedback_tipo, feedback_mensagem):
-                    st.success("Obrigado! Seu feedback foi enviado com sucesso. ❤️")
-                else:
-                    st.error("Desculpe, houve um erro ao enviar seu feedback.")
+    if formspree_endpoint:
+        form_html = f"""
+        <div class="feedback-form">
+            <form action="{formspree_endpoint}" method="POST">
+                <input type="email" name="email" placeholder="Seu e-mail (opcional)">
+                <select name="tipo">
+                    <option>Elogio</option>
+                    <option>Crítica Construtiva</option>
+                    <option>Sugestão de Melhoria</option>
+                    <option>Relatar um Erro</option>
+                </select>
+                <textarea name="message" placeholder="Sua mensagem" required></textarea>
+                <button type="submit">Enviar Feedback</button>
+            </form>
+        </div>
+        """
+        st.markdown(form_html, unsafe_allow_html=True)
+    else:
+        st.warning("A funcionalidade de feedback não está configurada.")
 
 # --- Rodapé ---
 st.markdown("---")
