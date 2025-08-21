@@ -16,19 +16,19 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* --- CORREÇÃO AQUI: Imagem de fundo centralizada --- */
+/* --- CORREÇÃO AQUI: Melhorias de legibilidade --- */
 
-/* 1. Aplica a imagem de fundo ao contentor principal da aplicação */
+/* 1. Aplica a imagem de fundo com uma camada escura mais forte */
 .stApp {
-    background-image: url("https://i.imgur.com/B1m7gaE.jpeg");
-    background-size: contain;      /* Garante que a imagem inteira seja visível */
-    background-position: center top; /* Posiciona a imagem no topo e centro */
+    background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("https://i.imgur.com/B1m7gaE.jpeg");
+    background-size: contain;
+    background-position: center top;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    background-color: #0c0c14;      /* Cor de fundo escura para preencher o espaço */
+    background-color: #0c0c14;
 }
 
-/* 2. Remove o fundo branco padrão dos elementos do Streamlit para que a imagem apareça */
+/* 2. Remove o fundo branco padrão dos elementos do Streamlit */
 [data-testid="stHeader"], [data-testid="stToolbar"] {
     background: none;
 }
@@ -37,19 +37,21 @@ css = """
     background: none;
 }
 
-/* 3. Ajusta a cor de todo o texto para garantir a legibilidade */
+/* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown, .stButton > button {
     color: #FFFFFF !important;
+    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); /* Adiciona sombra ao texto */
 }
 
-/* Garante que os captions do radio button também fiquem brancos */
+/* Garante que os captions do radio button também fiquem brancos e com sombra */
 [data-testid="stCaptionContainer"] {
     color: #E0E0E0 !important;
+    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Estilo dos cards de conteúdo - com um fundo mais sólido para legibilidade */
+/* Estilo dos cards de conteúdo */
 .content-card {
-    background-color: rgba(15, 23, 42, 0.7); /* Fundo mais opaco para legibilidade */
+    background-color: rgba(15, 23, 42, 0.7);
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 20px;
@@ -67,9 +69,9 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
 .subtitle {
     text-align: center;
     font-size: 1.2em;
-    color: #E0E0E0; /* Cor cinza claro para o subtítulo */
+    color: #E0E0E0;
     margin-bottom: 20px;
-    padding-top: 250px; /* Adiciona espaço no topo para a imagem respirar */
+    padding-top: 250px;
 }
 
 /* Estilo do botão principal */
