@@ -16,9 +16,9 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* --- ALTERAÇÃO AQUI: Imagem de fundo --- */
+/* --- ALTERAÇÃO AQUI: Imagem de fundo com o link direto --- */
 [data-testid="stAppViewContainer"] > .main {
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://imgur.com/B1m7gaE");
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://i.imgur.com/B1m7gaE.jpeg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -26,9 +26,15 @@ css = """
 }
 
 /* Ajusta a cor do texto para melhor contraste com o fundo escuro */
-h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput {
-    color: #FFFFFF;
+h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
+    color: #FFFFFF !important;
 }
+
+/* Garante que os captions do radio button também fiquem brancos */
+.st-emotion-cache-1y4p8pa {
+    color: #E0E0E0 !important;
+}
+
 
 /* Estilo dos cards de conteúdo */
 .content-card {
