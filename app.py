@@ -16,15 +16,16 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* --- CORREÇÃO AQUI: Abordagem mais robusta para a imagem de fundo --- */
+/* --- CORREÇÃO AQUI: Imagem de fundo centralizada --- */
 
 /* 1. Aplica a imagem de fundo ao contentor principal da aplicação */
 .stApp {
-    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("https://i.imgur.com/B1m7gaE.jpeg");
-    background-size: cover;
-    background-position: center;
+    background-image: url("https://i.imgur.com/B1m7gaE.jpeg");
+    background-size: contain;      /* Garante que a imagem inteira seja visível */
+    background-position: center top; /* Posiciona a imagem no topo e centro */
     background-repeat: no-repeat;
     background-attachment: fixed;
+    background-color: #0c0c14;      /* Cor de fundo escura para preencher o espaço */
 }
 
 /* 2. Remove o fundo branco padrão dos elementos do Streamlit para que a imagem apareça */
@@ -46,9 +47,9 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     color: #E0E0E0 !important;
 }
 
-/* Estilo dos cards de conteúdo */
+/* Estilo dos cards de conteúdo - com um fundo mais sólido para legibilidade */
 .content-card {
-    background-color: rgba(255, 255, 255, 0.1); /* Mais transparente para o novo fundo */
+    background-color: rgba(15, 23, 42, 0.7); /* Fundo mais opaco para legibilidade */
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 20px;
@@ -57,13 +58,9 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     backdrop-filter: blur(10px);
 }
 
-/* Estilo do título principal */
+/* Estilo do título principal - removido para não sobrepor o texto da imagem */
 .title {
-    text-align: center;
-    font-size: 4.5em;
-    font-weight: bold;
-    color: #FFFFFF; /* Cor branca para o título */
-    padding-top: 20px;
+   display: none;
 }
 
 /* Estilo do subtítulo */
@@ -71,7 +68,8 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     text-align: center;
     font-size: 1.2em;
     color: #E0E0E0; /* Cor cinza claro para o subtítulo */
-    margin-bottom: 40px;
+    margin-bottom: 20px;
+    padding-top: 250px; /* Adiciona espaço no topo para a imagem respirar */
 }
 
 /* Estilo do botão principal */
@@ -273,7 +271,8 @@ def buscar_imagem_no_unsplash(api_key, keywords):
         return None
 
 # --- Interface do Usuário (UI) ---
-st.markdown('<p class="title">✨ CoachAI Espiritual ✨</p>', unsafe_allow_html=True)
+# O título em texto é removido pois já está na imagem de fundo
+st.markdown('<p class="title"></p>', unsafe_allow_html=True) 
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
 
 _, col_controles, _ = st.columns([1, 2, 1])
