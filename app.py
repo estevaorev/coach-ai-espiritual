@@ -38,7 +38,7 @@ css = """
 }
 
 /* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
-h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown, .stButton > button {
+h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
     color: #FFFFFF !important;
     text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); /* Adiciona sombra ao texto */
 }
@@ -75,7 +75,7 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
 }
 
 /* Estilo do botão principal */
-div[data-testid="stButton"] > button {
+.main-button div[data-testid="stButton"] > button {
     background-color: #3498db;
     color: white;
     border-radius: 25px;
@@ -87,17 +87,29 @@ div[data-testid="stButton"] > button {
     transition: all 0.3s ease;
 }
 
-div[data-testid="stButton"] > button:hover {
+.main-button div[data-testid="stButton"] > button:hover {
     background-color: #2980b9;
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     transform: translateY(-2px);
 }
 
-/* Centraliza o botão */
-.stButton {
-    display: flex;
-    justify-content: center;
+/* Estilos para os botões de sugestão */
+.suggestion-buttons div[data-testid="stButton"] > button {
+    background-color: transparent;
+    color: #E0E0E0 !important;
+    border: 1px solid #3498db;
+    font-weight: normal;
+    font-size: 0.9em;
+    padding: 8px 10px;
+    border-radius: 15px;
+    transition: all 0.3s ease;
 }
+
+.suggestion-buttons div[data-testid="stButton"] > button:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+    border-color: #FFFFFF;
+}
+
 
 /* Estilos para o formulário HTML */
 .feedback-form input, .feedback-form select, .feedback-form textarea {
@@ -303,6 +315,8 @@ with col_controles:
     )
 
     st.write("Precisa de ajuda para começar?")
+    # --- ALTERAÇÃO AQUI: Adiciona um container com uma classe para os botões de sugestão ---
+    st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
     b_col1, b_col2, b_col3 = st.columns(3)
     with b_col1:
         st.button("Preciso de Conforto", on_click=set_text_conforto, use_container_width=True)
@@ -310,10 +324,13 @@ with col_controles:
         st.button("Busco Inspiração", on_click=set_text_inspiracao, use_container_width=True)
     with b_col3:
         st.button("Quero uma Perspectiva", on_click=set_text_perspectiva, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
+    # --- ALTERAÇÃO AQUI: Adiciona um container com uma classe para o botão principal ---
+    st.markdown('<div class="main-button">', unsafe_allow_html=True)
     if st.button("Receber Mensagem", use_container_width=True):
         if not google_api_key or not unsplash_api_key:
             st.error("Por favor, configure as chaves de API na barra lateral.")
@@ -330,6 +347,7 @@ with col_button:
                 st.session_state.last_response = conteudo_gerado
                 st.session_state.last_input = st.session_state.sentimento_input
                 st.session_state.rated = False
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Exibição do Conteúdo Gerado ---
 if 'last_response' in st.session_state:
