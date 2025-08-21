@@ -16,19 +16,28 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* Fundo com gradiente suave */
+/* --- ALTERAÇÃO AQUI: Imagem de fundo --- */
 [data-testid="stAppViewContainer"] > .main {
-    background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://imgur.com/B1m7gaE");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* Ajusta a cor do texto para melhor contraste com o fundo escuro */
+h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput {
+    color: #FFFFFF;
 }
 
 /* Estilo dos cards de conteúdo */
 .content-card {
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.1); /* Mais transparente para o novo fundo */
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
 }
 
@@ -37,7 +46,7 @@ css = """
     text-align: center;
     font-size: 4.5em;
     font-weight: bold;
-    color: #2c3e50;
+    color: #FFFFFF; /* Cor branca para o título */
     padding-top: 20px;
 }
 
@@ -45,7 +54,7 @@ css = """
 .subtitle {
     text-align: center;
     font-size: 1.2em;
-    color: #34495e;
+    color: #E0E0E0; /* Cor cinza claro para o subtítulo */
     margin-bottom: 40px;
 }
 
@@ -344,7 +353,7 @@ st.markdown("---")
 # Exibe as estatísticas da aplicação
 if firebase_status == "Conectado":
     stats_html = f"""
-    <div style='text-align: center; font-size: 1em; color: #34495e;'>
+    <div style='text-align: center; font-size: 1em; color: #FFFFFF;'>
         👁️ Visitas: <strong>{app_stats['visits']}</strong> &nbsp;&nbsp;&nbsp; ✉️ Mensagens Geradas: <strong>{app_stats['messages']}</strong>
     </div>
     """
@@ -354,7 +363,7 @@ if firebase_status == "Conectado":
     if total_ratings > 0:
         satisfaction_rate = app_stats['likes'] / total_ratings
         st.markdown(f"""
-        <div style='text-align: center; font-size: 1em; color: #34495e; margin-top: 10px;'>
+        <div style='text-align: center; font-size: 1em; color: #FFFFFF; margin-top: 10px;'>
             <strong>Taxa de Satisfação ({total_ratings} avaliações)</strong><br>
             👍 {app_stats['likes']} Gostaram &nbsp;&nbsp;&nbsp; 👎 {app_stats['dislikes']} Não Gostaram
         </div>
@@ -362,7 +371,7 @@ if firebase_status == "Conectado":
         st.progress(satisfaction_rate)
 
 st.markdown(
-    "<div style='text-align: center; font-size: 0.9em; color: #34495e; padding: 20px;'>"
+    "<div style='text-align: center; font-size: 0.9em; color: #E0E0E0; padding: 20px;'>"
     "Lembre-se: O CoachAI Espiritual é uma ferramenta de apoio e não substitui aconselhamento profissional."
     "</div>",
     unsafe_allow_html=True
