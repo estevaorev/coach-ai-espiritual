@@ -16,25 +16,35 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* --- ALTERAÇÃO AQUI: Imagem de fundo com o link direto --- */
-[data-testid="stAppViewContainer"] > .main {
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://i.imgur.com/B1m7gaE.jpeg");
+/* --- CORREÇÃO AQUI: Abordagem mais robusta para a imagem de fundo --- */
+
+/* 1. Aplica a imagem de fundo ao contentor principal da aplicação */
+.stApp {
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("https://i.imgur.com/B1m7gaE.jpeg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
 }
 
-/* Ajusta a cor do texto para melhor contraste com o fundo escuro */
-h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
+/* 2. Remove o fundo branco padrão dos elementos do Streamlit para que a imagem apareça */
+[data-testid="stHeader"], [data-testid="stToolbar"] {
+    background: none;
+}
+
+[data-testid="stAppViewContainer"] > .main {
+    background: none;
+}
+
+/* 3. Ajusta a cor de todo o texto para garantir a legibilidade */
+h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown, .stButton > button {
     color: #FFFFFF !important;
 }
 
 /* Garante que os captions do radio button também fiquem brancos */
-.st-emotion-cache-1y4p8pa {
+[data-testid="stCaptionContainer"] {
     color: #E0E0E0 !important;
 }
-
 
 /* Estilo dos cards de conteúdo */
 .content-card {
@@ -96,6 +106,7 @@ div[data-testid="stButton"] > button:hover {
     margin-bottom: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
+    color: #000000; /* Texto preto para os campos do formulário */
 }
 .feedback-form button {
     width: 100%;
