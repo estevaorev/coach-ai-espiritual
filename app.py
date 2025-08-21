@@ -432,6 +432,23 @@ if firebase_status == "Conectado":
         """, unsafe_allow_html=True)
         st.progress(satisfaction_rate)
 
+# --- NOVA SEÇÃO: Sobre o Criador ---
+st.markdown("---")
+_, col_creator, _ = st.columns([1, 2, 1])
+with col_creator:
+    st.subheader("👨‍💻 Sobre o Criador")
+    st.markdown("""
+    <div class="content-card">
+        <p>Olá! Sou Estevão Gonçalves, Analista de Sistemas e um entusiasta da tecnologia com foco em automação de processos e gestão de TI. Atualmente, estou a aprofundar os meus conhecimentos em Análise e Desenvolvimento de Sistemas.</p>
+        <p>Além da minha carreira em tecnologia, sou Presbítero na ICB Vista Linda, amante da teologia e produtor semanal de estudos para células. O CoachAI Espiritual nasceu da união dessas duas paixões: explorar como a Inteligência Artificial pode ser usada para criar ferramentas que oferecem apoio, conforto e inspiração no nosso dia a dia.</p>
+        <p>
+            Conecte-se comigo no <a href="https://www.linkedin.com/in/estevaorev" target="_blank" style="color: #3498db; text-decoration: none; font-weight: bold;">LinkedIn</a> 
+            ou acompanhe os meus estudos no meu canal do <a href="https://www.youtube.com/@estevaorev" target="_blank" style="color: #FF0000; text-decoration: none; font-weight: bold;">YouTube</a>.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 st.markdown(
     "<div style='text-align: center; font-size: 0.9em; color: #E0E0E0; padding: 20px;'>"
     "Lembre-se: O CoachAI Espiritual é uma ferramenta de apoio e não substitui aconselhamento profissional."
