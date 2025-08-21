@@ -315,7 +315,6 @@ with col_controles:
     )
 
     st.write("Precisa de ajuda para começar?")
-    # --- ALTERAÇÃO AQUI: Adiciona um container com uma classe para os botões de sugestão ---
     st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
     b_col1, b_col2, b_col3 = st.columns(3)
     with b_col1:
@@ -329,7 +328,6 @@ with col_controles:
 
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
-    # --- ALTERAÇÃO AQUI: Adiciona um container com uma classe para o botão principal ---
     st.markdown('<div class="main-button">', unsafe_allow_html=True)
     if st.button("Receber Mensagem", use_container_width=True):
         if not google_api_key or not unsplash_api_key:
@@ -399,12 +397,12 @@ with col_form:
         form_html = f"""
         <div class="feedback-form">
             <form action="{formspree_endpoint}" method="POST">
-                <input type="email" name="email" placeholder="Seu e-mail (opcional)">
-                <select name="tipo">
+                <input tabindex="-1" type="email" name="email" placeholder="Seu e-mail (opcional)">
+                <select tabindex="-1" name="tipo">
                     <option>Elogio</option><option>Crítica Construtiva</option><option>Sugestão de Melhoria</option><option>Relatar um Erro</option>
                 </select>
-                <textarea name="message" placeholder="Sua mensagem" required></textarea>
-                <button type="submit">Enviar Feedback</button>
+                <textarea tabindex="-1" name="message" placeholder="Sua mensagem" required></textarea>
+                <button tabindex="-1" type="submit">Enviar Feedback</button>
             </form>
         </div>
         """
