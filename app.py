@@ -273,34 +273,62 @@ def buscar_imagem_no_unsplash(api_key, keywords):
         return None
 
 # --- Interface do Usuário (UI) ---
-# O título em texto é removido pois já está na imagem de fundo
 st.markdown('<p class="title"></p>', unsafe_allow_html=True) 
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
+
+# Inicializa o estado da sessão para a caixa de texto
+if 'sentimento_input' not in st.session_state:
+    st.session_state.sentimento_input = ""
+
+# Funções para atualizar a caixa de texto
+def set_text_conforto():
+    st.session_state.sentimento_input = "Estou a passar por um momento difícil e sinto-me um pouco triste."
+def set_text_inspiracao():
+    st.session_state.sentimento_input = "Gostaria de uma mensagem de motivação para começar bem o meu dia."
+def set_text_perspectiva():
+    st.session_state.sentimento_input = "Estou a enfrentar uma decisão importante e sinto-me um pouco perdido(a)."
 
 _, col_controles, _ = st.columns([1, 2, 1])
 with col_controles:
     st.subheader("1. Escolha o tom do seu guia")
     tom = st.radio("Tom do Guia", ["amigo", "sábio", "direto"], horizontal=True, label_visibility="collapsed")
+    
     st.subheader("2. Descreva sua necessidade")
-    sentimento_input = st.text_area("Necessidade", placeholder="Ex: 'Estou me sentindo um pouco triste hoje'", height=130, label_visibility="collapsed")
+    sentimento_input = st.text_area(
+        "Necessidade",
+        placeholder="Escreva como se sente ou escolha um ponto de partida abaixo...",
+        height=130,
+        key="sentimento_input", # Liga a caixa de texto ao estado da sessão
+        label_visibility="collapsed"
+    )
+
+    st.write("Precisa de ajuda para começar?")
+    b_col1, b_col2, b_col3 = st.columns(3)
+    with b_col1:
+        st.button("Preciso de Conforto", on_click=set_text_conforto, use_container_width=True)
+    with b_col2:
+        st.button("Busco Inspiração", on_click=set_text_inspiracao, use_container_width=True)
+    with b_col3:
+        st.button("Quero uma Perspectiva", on_click=set_text_perspectiva, use_container_width=True)
+
 
 _, col_button, _ = st.columns([1, 2, 1])
 with col_button:
     if st.button("Receber Mensagem", use_container_width=True):
         if not google_api_key or not unsplash_api_key:
             st.error("Por favor, configure as chaves de API na barra lateral.")
-        elif not sentimento_input:
+        elif not st.session_state.sentimento_input: # Usa o valor do estado da sessão
             st.warning("Por favor, descreva como você está se sentindo.")
         else:
             conteudo_gerado = None
             with st.spinner("Conectando-se com a sabedoria do universo..."):
-                conteudo_gerado = gerar_conteudo_espiritual(google_api_key, sentimento_input, tom)
+                conteudo_gerado = gerar_conteudo_espiritual(google_api_key, st.session_state.sentimento_input, tom)
             
             if conteudo_gerado:
-                increment_message_count() # Incrementa o contador de mensagens
-                get_app_stats.clear() # Limpa o cache para buscar os dados mais recentes
+                increment_message_count()
+                get_app_stats.clear()
                 st.session_state.last_response = conteudo_gerado
-                st.session_state.last_input = sentimento_input
+                st.session_state.last_input = st.session_state.sentimento_input
                 st.session_state.rated = False
 
 # --- Exibição do Conteúdo Gerado ---
