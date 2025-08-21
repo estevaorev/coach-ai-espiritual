@@ -253,8 +253,19 @@ def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-05-20")
-        mapa_tons = {"amigo": "amigo(a) e acolhedor(a)", "sábio": "sábio(a) e reflexivo(a)", "direto": "direto(a) e conciso(a)"}
+        
+        # --- ALTERAÇÃO AQUI: Adiciona os novos tons ---
+        mapa_tons = {
+            "amigo": "amigo(a) e acolhedor(a)",
+            "sábio": "sábio(a) e reflexivo(a)",
+            "direto": "direto(a) e conciso(a)",
+            "encorajador": "encorajador(a) e motivacional, como um treinador",
+            "calmo": "calmo(a) e sereno(a), com foco em paz interior e tranquilidade",
+            "poético": "poético(a) e contemplativo(a), usando metáforas e linguagem figurativa",
+            "descontraído": "descontraído(a) e bem-humorado(a), como uma conversa leve e otimista"
+        }
         tom_formatado = mapa_tons.get(tom_escolhido, "acolhedor(a)")
+        
         prompt = f"""Você é um Coach Espiritual. Analise o sentimento do usuário: "{sentimento_usuario}".
             Sua tarefa é retornar um objeto JSON com 4 chaves: "mensagem", "versiculo", "oracao", "keywords".
             1.  **mensagem**: Crie uma mensagem de conforto/inspiração com um tom {tom_formatado}.
@@ -303,7 +314,14 @@ def set_text_perspectiva():
 _, col_controles, _ = st.columns([1, 2, 1])
 with col_controles:
     st.subheader("1. Escolha o tom do seu guia")
-    tom = st.radio("Tom do Guia", ["amigo", "sábio", "direto"], horizontal=True, label_visibility="collapsed")
+    
+    # --- ALTERAÇÃO AQUI: Troca st.radio por st.selectbox ---
+    tom = st.selectbox(
+        label="Tom do Guia",
+        options=["amigo", "sábio", "direto", "encorajador", "calmo", "poético", "descontraído"],
+        format_func=lambda x: x.capitalize(), # Deixa a primeira letra maiúscula na exibição
+        label_visibility="collapsed"
+    )
     
     st.subheader("2. Descreva sua necessidade")
     sentimento_input = st.text_area(
