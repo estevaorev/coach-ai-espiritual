@@ -72,10 +72,15 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     padding-top: 250px;
 }
 
-/* --- CORREÇÃO FINAL AQUI: Estilos de botão mais específicos --- */
+/* --- CORREÇÃO FINAL AQUI: Estilos de botão mais específicos usando um marcador --- */
 
-/* Seleciona o primeiro botão dentro do contentor dos botões de ação */
-.action-buttons-container div[data-testid="column"]:nth-of-type(1) button {
+/* Esconde o marcador */
+#action-buttons-marker {
+    display: none;
+}
+
+/* Seleciona o primeiro botão na secção de ações */
+#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) button {
     background-color: #28a745 !important;
     background-image: none !important;
     color: white !important;
@@ -87,14 +92,14 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
     transition: all 0.3s ease !important;
 }
-.action-buttons-container div[data-testid="column"]:nth-of-type(1) button:hover {
+#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) button:hover {
     background-color: #218838 !important;
     box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
     transform: translateY(-2px) !important;
 }
 
-/* Seleciona o segundo botão dentro do contentor dos botões de ação */
-.action-buttons-container div[data-testid="column"]:nth-of-type(2) button {
+/* Seleciona o segundo botão na secção de ações */
+#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button {
     background-image: linear-gradient(to right, #00c6ff 0%, #0072ff  51%, #00c6ff  100%) !important;
     color: white !important;
     border-radius: 25px !important;
@@ -106,7 +111,7 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     transition: 0.5s !important;
     background-size: 200% auto !important;
 }
-.action-buttons-container div[data-testid="column"]:nth-of-type(2) button:hover {
+#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button:hover {
     background-position: right center !important;
     transform: translateY(-2px) !important;
 }
@@ -363,7 +368,7 @@ with col_controles:
 # --- ALTERAÇÃO AQUI: Nova estrutura para os botões de ação ---
 _, col_botoes_acao, _ = st.columns([1, 2, 1])
 with col_botoes_acao:
-    st.markdown('<div class="action-buttons-container">', unsafe_allow_html=True)
+    st.markdown('<div id="action-buttons-marker"></div>', unsafe_allow_html=True)
     b_acao1, b_acao2 = st.columns(2)
     with b_acao1:
         if st.button("Receber Mensagem", use_container_width=True, key="main_button"):
@@ -375,7 +380,6 @@ with col_botoes_acao:
     with b_acao2:
         if st.button("✨ Me Surpreenda", use_container_width=True, key="surprise_button"):
             st.session_state.acao = ("gerar", "Preciso de uma mensagem de sabedoria e inspiração para o meu dia")
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # Lógica para gerar a mensagem baseada na ação do botão
 if 'acao' in st.session_state:
