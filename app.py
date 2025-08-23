@@ -366,14 +366,14 @@ with col_botoes_acao:
     st.markdown('<div class="action-buttons-container">', unsafe_allow_html=True)
     b_acao1, b_acao2 = st.columns(2)
     with b_acao1:
-        if st.button("Receber Mensagem", use_container_width=True):
+        if st.button("Receber Mensagem", use_container_width=True, key="main_button"):
             if not st.session_state.sentimento_input:
                 st.warning("Por favor, descreva como você está se sentindo.")
             else:
                 st.session_state.acao = ("gerar", st.session_state.sentimento_input)
     
     with b_acao2:
-        if st.button("✨ Me Surpreenda", use_container_width=True):
+        if st.button("✨ Me Surpreenda", use_container_width=True, key="surprise_button"):
             st.session_state.acao = ("gerar", "Preciso de uma mensagem de sabedoria e inspiração para o meu dia")
     st.markdown('</div>', unsafe_allow_html=True)
 
