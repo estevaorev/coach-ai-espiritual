@@ -72,9 +72,9 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     padding-top: 250px;
 }
 
-/* Estilo do botão principal */
+/* --- ALTERAÇÃO AQUI: Estilo do botão "Receber Mensagem" (agora verde) --- */
 .main-button div[data-testid="stButton"] > button {
-    background-color: #3498db;
+    background-color: #28a745; /* Verde, igual ao botão de feedback */
     color: white;
     border-radius: 25px;
     padding: 12px 30px;
@@ -86,14 +86,14 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
 }
 
 .main-button div[data-testid="stButton"] > button:hover {
-    background-color: #2980b9;
+    background-color: #218838; /* Verde mais escuro no hover */
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     transform: translateY(-2px);
 }
 
-/* --- NOVO ESTILO: Botão "Me Surpreenda" --- */
+/* --- ALTERAÇÃO AQUI: Estilo do botão "Me Surpreenda" (agora azul claro) --- */
 .surprise-button div[data-testid="stButton"] > button {
-    background-image: linear-gradient(to right, #DA4453 0%, #89216B  51%, #DA4453  100%);
+    background-image: linear-gradient(to right, #00c6ff 0%, #0072ff  51%, #00c6ff  100%);
     color: white;
     border-radius: 25px;
     padding: 12px 30px;
@@ -357,7 +357,6 @@ with col_controles:
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# --- ALTERAÇÃO AQUI: Botões de Ação Principal ---
 _, col_botoes_acao, _ = st.columns([1, 2, 1])
 with col_botoes_acao:
     b_acao1, b_acao2 = st.columns(2)
