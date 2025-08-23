@@ -37,7 +37,7 @@ css = """
 
 /* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
-    color: #FFFFFF !important;
+    color: #28a745 !important;
     text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); /* Adiciona sombra ao texto */
 }
 
