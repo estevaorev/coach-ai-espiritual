@@ -72,59 +72,63 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     padding-top: 250px;
 }
 
-/* --- ALTERAÇÃO AQUI: Estilo do botão "Receber Mensagem" (agora verde) --- */
-.main-button div[data-testid="stButton"] > button {
-    background-color: #28a745; /* Verde, igual ao botão de feedback */
-    color: white;
-    border-radius: 25px;
-    padding: 12px 30px;
-    font-size: 1.1em;
-    font-weight: bold;
-    border: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
+/* --- CORREÇÃO AQUI: Estilos de botão mais robustos --- */
+
+/* Estilo do botão "Receber Mensagem" (verde) */
+.main-button button {
+    background-color: #28a745 !important;
+    background-image: none !important; /* Remove qualquer gradiente residual */
+    color: white !important;
+    border-radius: 25px !important;
+    padding: 12px 30px !important;
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    border: none !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    transition: all 0.3s ease !important;
 }
 
-.main-button div[data-testid="stButton"] > button:hover {
-    background-color: #218838; /* Verde mais escuro no hover */
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    transform: translateY(-2px);
+.main-button button:hover {
+    background-color: #218838 !important;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+    transform: translateY(-2px) !important;
 }
 
-/* --- ALTERAÇÃO AQUI: Estilo do botão "Me Surpreenda" (agora azul claro) --- */
-.surprise-button div[data-testid="stButton"] > button {
-    background-image: linear-gradient(to right, #00c6ff 0%, #0072ff  51%, #00c6ff  100%);
-    color: white;
-    border-radius: 25px;
-    padding: 12px 30px;
-    font-size: 1.1em;
-    font-weight: bold;
-    border: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: 0.5s;
-    background-size: 200% auto;
+/* Estilo do botão "Me Surpreenda" (azul claro) */
+.surprise-button button {
+    background-image: linear-gradient(to right, #00c6ff 0%, #0072ff  51%, #00c6ff  100%) !important;
+    color: white !important;
+    border-radius: 25px !important;
+    padding: 12px 30px !important;
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    border: none !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    transition: 0.5s !important;
+    background-size: 200% auto !important;
 }
-.surprise-button div[data-testid="stButton"] > button:hover {
-    background-position: right center;
-    transform: translateY(-2px);
+.surprise-button button:hover {
+    background-position: right center !important;
+    transform: translateY(-2px) !important;
 }
 
 
 /* Estilos para os botões de sugestão */
-.suggestion-buttons div[data-testid="stButton"] > button {
-    background-color: transparent;
+.suggestion-buttons button {
+    background-color: transparent !important;
+    background-image: none !important;
     color: #E0E0E0 !important;
-    border: 1px solid #3498db;
-    font-weight: normal;
-    font-size: 0.9em;
-    padding: 8px 10px;
-    border-radius: 15px;
-    transition: all 0.3s ease;
+    border: 1px solid #3498db !important;
+    font-weight: normal !important;
+    font-size: 0.9em !important;
+    padding: 8px 10px !important;
+    border-radius: 15px !important;
+    transition: all 0.3s ease !important;
 }
 
-.suggestion-buttons div[data-testid="stButton"] > button:hover {
-    background-color: rgba(52, 152, 219, 0.2);
-    border-color: #FFFFFF;
+.suggestion-buttons button:hover {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    border-color: #FFFFFF !important;
 }
 
 
