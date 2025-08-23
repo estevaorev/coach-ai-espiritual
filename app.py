@@ -16,8 +16,6 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* --- CORREÇÃO AQUI: Melhorias de legibilidade --- */
-
 /* 1. Aplica a imagem de fundo com uma camada escura mais forte */
 .stApp {
     background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("https://i.imgur.com/B1m7gaE.jpeg");
@@ -92,6 +90,25 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     transform: translateY(-2px);
 }
+
+/* --- NOVO ESTILO: Botão "Me Surpreenda" --- */
+.surprise-button div[data-testid="stButton"] > button {
+    background-image: linear-gradient(to right, #DA4453 0%, #89216B  51%, #DA4453  100%);
+    color: white;
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: 0.5s;
+    background-size: 200% auto;
+}
+.surprise-button div[data-testid="stButton"] > button:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+}
+
 
 /* Estilos para os botões de sugestão */
 .suggestion-buttons div[data-testid="stButton"] > button {
@@ -253,8 +270,6 @@ def gerar_conteudo_espiritual(api_key, sentimento_usuario, tom_escolhido):
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-05-20")
-        
-        # --- ALTERAÇÃO AQUI: Adiciona os novos tons ---
         mapa_tons = {
             "amigo": "amigo(a) e acolhedor(a)",
             "sábio": "sábio(a) e reflexivo(a)",
@@ -314,12 +329,10 @@ def set_text_perspectiva():
 _, col_controles, _ = st.columns([1, 2, 1])
 with col_controles:
     st.subheader("1. Escolha o tom do seu guia")
-    
-    # --- ALTERAÇÃO AQUI: Troca st.radio por st.selectbox ---
     tom = st.selectbox(
         label="Tom do Guia",
         options=["amigo", "sábio", "direto", "encorajador", "calmo", "poético", "descontraído"],
-        format_func=lambda x: x.capitalize(), # Deixa a primeira letra maiúscula na exibição
+        format_func=lambda x: x.capitalize(),
         label_visibility="collapsed"
     )
     
@@ -328,7 +341,7 @@ with col_controles:
         "Necessidade",
         placeholder="Escreva como se sente ou escolha um ponto de partida abaixo...",
         height=130,
-        key="sentimento_input", # Liga a caixa de texto ao estado da sessão
+        key="sentimento_input",
         label_visibility="collapsed"
     )
 
@@ -344,26 +357,43 @@ with col_controles:
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-_, col_button, _ = st.columns([1, 2, 1])
-with col_button:
-    st.markdown('<div class="main-button">', unsafe_allow_html=True)
-    if st.button("Receber Mensagem", use_container_width=True):
-        if not google_api_key or not unsplash_api_key:
-            st.error("Por favor, configure as chaves de API na barra lateral.")
-        elif not st.session_state.sentimento_input: # Usa o valor do estado da sessão
-            st.warning("Por favor, descreva como você está se sentindo.")
-        else:
-            conteudo_gerado = None
-            with st.spinner("Conectando-se com a sabedoria do universo..."):
-                conteudo_gerado = gerar_conteudo_espiritual(google_api_key, st.session_state.sentimento_input, tom)
-            
-            if conteudo_gerado:
-                increment_message_count()
-                get_app_stats.clear()
-                st.session_state.last_response = conteudo_gerado
-                st.session_state.last_input = st.session_state.sentimento_input
-                st.session_state.rated = False
-    st.markdown('</div>', unsafe_allow_html=True)
+# --- ALTERAÇÃO AQUI: Botões de Ação Principal ---
+_, col_botoes_acao, _ = st.columns([1, 2, 1])
+with col_botoes_acao:
+    b_acao1, b_acao2 = st.columns(2)
+    with b_acao1:
+        st.markdown('<div class="main-button">', unsafe_allow_html=True)
+        if st.button("Receber Mensagem", use_container_width=True):
+            if not st.session_state.sentimento_input:
+                st.warning("Por favor, descreva como você está se sentindo.")
+            else:
+                st.session_state.acao = ("gerar", st.session_state.sentimento_input)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with b_acao2:
+        st.markdown('<div class="surprise-button">', unsafe_allow_html=True)
+        if st.button("✨ Me Surpreenda", use_container_width=True):
+            st.session_state.acao = ("gerar", "Preciso de uma mensagem de sabedoria e inspiração para o meu dia")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# Lógica para gerar a mensagem baseada na ação do botão
+if 'acao' in st.session_state:
+    acao_tipo, texto_para_ia = st.session_state.acao
+    del st.session_state.acao # Limpa a ação para evitar re-execução
+
+    if not google_api_key or not unsplash_api_key:
+        st.error("Por favor, configure as chaves de API na barra lateral.")
+    else:
+        conteudo_gerado = None
+        with st.spinner("Conectando-se com a sabedoria do universo..."):
+            conteudo_gerado = gerar_conteudo_espiritual(google_api_key, texto_para_ia, tom)
+        
+        if conteudo_gerado:
+            increment_message_count()
+            get_app_stats.clear()
+            st.session_state.last_response = conteudo_gerado
+            st.session_state.last_input = texto_para_ia
+            st.session_state.rated = False
 
 # --- Exibição do Conteúdo Gerado ---
 if 'last_response' in st.session_state:
