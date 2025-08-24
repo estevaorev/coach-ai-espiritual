@@ -37,8 +37,8 @@ css = """
 
 /* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
-    color: #28a745 !important;
-    text-shadow: 1px 1px 6px rgba(f, f, f, f); /* Adiciona sombra ao texto */
+    color: #28a745 !important; /* Cor verde definida por si */
+    /*text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8);  Sombra preta para contraste */
 }
 
 /* Garante que os captions do radio button também fiquem brancos e com sombra */
@@ -72,50 +72,32 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     padding-top: 250px;
 }
 
-/* --- CORREÇÃO FINAL AQUI: Estilos de botão mais específicos usando um marcador --- */
+/* --- ESTILO UNIFICADO PARA OS BOTÕES DE AÇÃO --- */
 
 /* Esconde o marcador */
 #action-buttons-marker {
     display: none;
 }
 
-/* Seleciona o primeiro botão na secção de ações */
-#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) button {
-    background-color: #28a745 !important;
+/* Seleciona TODOS os botões na secção de ações e aplica o estilo "fantasma" verde */
+#action-buttons-marker + [data-testid="stHorizontalBlock"] button {
+    background-color: transparent !important;
     background-image: none !important;
-    color: white !important;
+    color: #28a745 !important; /* Texto verde */
+    border: 2px solid #28a745 !important; /* Borda verde */
     border-radius: 25px !important;
     padding: 12px 30px !important;
     font-size: 1.1em !important;
     font-weight: bold !important;
-    border: none !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    box-shadow: none !important;
     transition: all 0.3s ease !important;
 }
-#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) button:hover {
-    background-color: #218838 !important;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+#action-buttons-marker + [data-testid="stHorizontalBlock"] button:hover {
+    background-color: #28a745 !important; /* Fundo verde sólido no hover */
+    color: #FFFFFF !important; /* Texto branco no hover */
+    border-color: #28a745 !important; /* Borda verde no hover */
     transform: translateY(-2px) !important;
 }
-
-/* Seleciona o segundo botão na secção de ações */
-#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button {
-    background-image: linear-gradient(to right, #00c6ff 0%, #0072ff  51%, #00c6ff  100%) !important;
-    color: white !important;
-    border-radius: 25px !important;
-    padding: 12px 30px !important;
-    font-size: 1.1em !important;
-    font-weight: bold !important;
-    border: none !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-    transition: 0.5s !important;
-    background-size: 200% auto !important;
-}
-#action-buttons-marker + [data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button:hover {
-    background-position: right center !important;
-    transform: translateY(-2px) !important;
-}
-
 
 /* Estilos para os botões de sugestão */
 .suggestion-buttons button {
@@ -345,15 +327,8 @@ with col_controles:
     )
     
     st.subheader("2. Descreva sua necessidade")
-    sentimento_input = st.text_area(
-        "Necessidade",
-        placeholder="Escreva como se sente ou escolha um ponto de partida abaixo...",
-        height=130,
-        key="sentimento_input",
-        label_visibility="collapsed"
-    )
-
-    st.write("Precisa de ajuda para começar?")
+    
+    st.write("Precisa de ajuda para começar? Escolha um ponto de partida:")
     st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
     b_col1, b_col2, b_col3 = st.columns(3)
     with b_col1:
@@ -364,8 +339,16 @@ with col_controles:
         st.button("Quero uma Perspectiva", on_click=set_text_perspectiva, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    sentimento_input = st.text_area(
+        "Necessidade",
+        placeholder="Ou escreva livremente como se sente...",
+        height=130,
+        key="sentimento_input",
+        label_visibility="collapsed"
+    )
 
-# --- ALTERAÇÃO AQUI: Nova estrutura para os botões de ação ---
+
+# --- Botões de Ação Principal ---
 _, col_botoes_acao, _ = st.columns([1, 2, 1])
 with col_botoes_acao:
     st.markdown('<div id="action-buttons-marker"></div>', unsafe_allow_html=True)
