@@ -1,6 +1,6 @@
 # Importa as bibliotecas necessárias
 import streamlit as st
-import streamlit.components.v1 as components
+# import streamlit.components.v1 as components # Removido para usar o novo st.html
 import google.generativeai as genai
 import requests
 import json
@@ -179,7 +179,7 @@ def inject_ga(measurement_id):
               gtag('config', '{measurement_id}');
             </script>
         """
-        components.html(ga_script, height=0)
+        st.html(ga_script) # --- ALTERAÇÃO AQUI: Usa st.html() ---
 
 # Injeta o script do Google Analytics no início da aplicação
 inject_ga(ga_measurement_id)
