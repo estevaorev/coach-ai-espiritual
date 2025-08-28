@@ -1,5 +1,6 @@
 # Importa as bibliotecas necessárias
 import streamlit as st
+# import streamlit.components.v1 as components # Removido para usar o novo st.html
 import google.generativeai as genai
 import requests
 import json
@@ -37,8 +38,8 @@ css = """
 
 /* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
-    color: #FFFFFF !important;
-    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); /* Adiciona sombra ao texto */
+    color: #28a745 !important;
+    /* text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); */ /* Sombra preta para contraste */
 }
 
 /* Garante que os captions do radio button também fiquem brancos e com sombra */
@@ -72,8 +73,32 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     padding-top: 250px;
 }
 
-/* --- CSS DOS BOTÕES DE AÇÃO REMOVIDO DAQUI --- */
-/* O estilo dos botões principais agora é controlado pelo config.toml */
+/* --- ESTILO UNIFICADO PARA OS BOTÕES DE AÇÃO --- */
+
+/* Esconde o marcador */
+#action-buttons-marker {
+    display: none;
+}
+
+/* Seleciona TODOS os botões na secção de ações e aplica o estilo "fantasma" verde */
+#action-buttons-marker + [data-testid="stHorizontalBlock"] button {
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #28a745 !important; /* Texto verde */
+    border: 2px solid #28a745 !important; /* Borda verde */
+    border-radius: 25px !important;
+    padding: 12px 30px !important;
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    box-shadow: none !important;
+    transition: all 0.3s ease !important;
+}
+#action-buttons-marker + [data-testid="stHorizontalBlock"] button:hover {
+    background-color: #28a745 !important; /* Fundo verde sólido no hover */
+    color: #FFFFFF !important; /* Texto branco no hover */
+    border-color: #28a745 !important; /* Borda verde no hover */
+    transform: translateY(-2px) !important;
+}
 
 /* Estilos para os botões de sugestão */
 .suggestion-buttons button {
@@ -126,18 +151,39 @@ def get_api_keys():
         keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"]
         keys['firebase_credentials'] = st.secrets["firebase"]["credentials"]
         keys['firebase_database_url'] = st.secrets["firebase"]["databaseURL"]
+        keys['ga_measurement_id'] = st.secrets["GA_MEASUREMENT_ID"] # Nova chave
     except (FileNotFoundError, KeyError):
         st.sidebar.header("🔑 Configuração de API Keys")
         keys['google'] = st.sidebar.text_input("Sua Google API Key", type="password")
         keys['unsplash'] = st.sidebar.text_input("Sua Unsplash API Key", type="password")
         keys['formspree'] = st.sidebar.text_input("Seu Endpoint do Formspree", type="password")
-        st.sidebar.warning("A configuração do Firebase (contador e avaliações) só funciona em produção.")
+        st.sidebar.warning("A configuração do Firebase e Analytics só funciona em produção.")
     return keys
 
 api_keys = get_api_keys()
 google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
+ga_measurement_id = api_keys.get('ga_measurement_id')
+
+# --- NOVA FUNÇÃO: Injetar Google Analytics ---
+def inject_ga(measurement_id):
+    if measurement_id:
+        ga_script = f"""
+            <!-- Google tag (gtag.js) -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){{dataLayer.push(arguments);}}
+              gtag('js', new Date());
+              gtag('config', '{measurement_id}');
+            </script>
+        """
+        st.html(ga_script)
+
+# Injeta o script do Google Analytics no início da aplicação
+inject_ga(ga_measurement_id)
+
 
 # --- Lógica do Firebase (Contador e Avaliações) ---
 def init_firebase_app(credentials_info, database_url):
@@ -222,13 +268,19 @@ if firebase_creds and firebase_url:
             st.session_state.visitor_counted = True
         app_stats = get_app_stats()
 
-# Adiciona o indicador de estado na barra lateral
+# Adiciona os indicadores de estado na barra lateral
 if firebase_creds and firebase_url:
     if firebase_status == "Conectado":
         st.sidebar.success("✅ Base de Dados: Ativa")
     else:
         st.sidebar.error("❌ Base de Dados: Falhou")
         st.sidebar.caption(f"Detalhe: {firebase_status}")
+
+# --- NOVO: Indicador de estado do Google Analytics ---
+if ga_measurement_id:
+    st.sidebar.success("✅ Analytics: Ativo")
+else:
+    st.sidebar.warning("⚠️ Analytics: Não Configurado")
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
@@ -303,15 +355,8 @@ with col_controles:
     )
     
     st.subheader("2. Descreva sua necessidade")
-    sentimento_input = st.text_area(
-        "Necessidade",
-        placeholder="Escreva como se sente ou escolha um ponto de partida abaixo...",
-        height=130,
-        key="sentimento_input",
-        label_visibility="collapsed"
-    )
-
-    st.write("Precisa de ajuda para começar?")
+    
+    st.write("Precisa de ajuda para começar? Escolha um ponto de partida:")
     st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
     b_col1, b_col2, b_col3 = st.columns(3)
     with b_col1:
@@ -322,10 +367,19 @@ with col_controles:
         st.button("Quero uma Perspectiva", on_click=set_text_perspectiva, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    sentimento_input = st.text_area(
+        "Necessidade",
+        placeholder="Ou escreva livremente como se sente...",
+        height=130,
+        key="sentimento_input",
+        label_visibility="collapsed"
+    )
+
 
 # --- Botões de Ação Principal ---
 _, col_botoes_acao, _ = st.columns([1, 2, 1])
 with col_botoes_acao:
+    st.markdown('<div id="action-buttons-marker"></div>', unsafe_allow_html=True)
     b_acao1, b_acao2 = st.columns(2)
     with b_acao1:
         if st.button("Receber Mensagem", use_container_width=True, key="main_button"):
