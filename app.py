@@ -38,7 +38,7 @@ css = """
 /* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
     color: #28a745 !important;
-    /* text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); */ /* Sombra preta para contraste */
+    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); /* Sombra preta para contraste */
 }
 
 /* Garante que os captions do radio button também fiquem brancos e com sombra */
@@ -150,38 +150,18 @@ def get_api_keys():
         keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"]
         keys['firebase_credentials'] = st.secrets["firebase"]["credentials"]
         keys['firebase_database_url'] = st.secrets["firebase"]["databaseURL"]
-        keys['ga_measurement_id'] = st.secrets.get("GA_MEASUREMENT_ID")
     except (FileNotFoundError, KeyError):
         st.sidebar.header("🔑 Configuração de API Keys")
         keys['google'] = st.sidebar.text_input("Sua Google API Key", type="password")
         keys['unsplash'] = st.sidebar.text_input("Sua Unsplash API Key", type="password")
         keys['formspree'] = st.sidebar.text_input("Seu Endpoint do Formspree", type="password")
-        st.sidebar.warning("A configuração do Firebase e Analytics só funciona em produção.")
+        st.sidebar.warning("A configuração do Firebase só funciona em produção.")
     return keys
 
 api_keys = get_api_keys()
 google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
-ga_measurement_id = api_keys.get('ga_measurement_id')
-
-# --- Injetar Google Analytics ---
-def inject_ga(measurement_id):
-    if measurement_id:
-        ga_script = f"""
-            <!-- Google tag (gtag.js) -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
-            <script>
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){{dataLayer.push(arguments);}}
-              gtag('js', new Date());
-              gtag('config', '{measurement_id}');
-            </script>
-        """
-        st.html(ga_script)
-
-inject_ga(ga_measurement_id)
-
 
 # --- Lógica do Firebase (Contador e Avaliações) ---
 def init_firebase_app(credentials_info, database_url):
@@ -273,11 +253,6 @@ if firebase_creds and firebase_url:
     else:
         st.sidebar.error("❌ Base de Dados: Falhou")
         st.sidebar.caption(f"Detalhe: {firebase_status}")
-
-if ga_measurement_id:
-    st.sidebar.success("✅ Analytics: Ativo")
-else:
-    st.sidebar.warning("⚠️ Analytics: Não Configurado")
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
