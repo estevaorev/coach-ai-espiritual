@@ -11,7 +11,7 @@ from datetime import datetime
 # Apenas o GA_MEASUREMENT_ID está definido diretamente para o teste.
 # As outras chaves continuarão a ser lidas a partir dos Segredos do Streamlit.
 
-GA_MEASUREMENT_ID = "COLE_O_SEU_ID_DE_METRICA_GA_AQUI" # Ex: "G-XXXXXXXXXX"
+GA_MEASUREMENT_ID = "G-SQNHZX78S0" # Ex: "G-XXXXXXXXXX"
 
 
 # --- Configuração da Página ---
