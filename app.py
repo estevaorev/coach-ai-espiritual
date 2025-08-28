@@ -7,13 +7,6 @@ import firebase_admin
 from firebase_admin import credentials, db
 from datetime import datetime
 
-# --- ATENÇÃO: Configuração de API Keys para Teste ---
-# Apenas o GA_MEASUREMENT_ID está definido diretamente para o teste.
-# As outras chaves continuarão a ser lidas a partir dos Segredos do Streamlit.
-
-GA_MEASUREMENT_ID = "COLE_O_SEU_ID_DE_METRICA_GA_AQUI" # Ex: "G-XXXXXXXXXX"
-
-
 # --- Configuração da Página ---
 st.set_page_config(
     page_title="CoachAI Espiritual",
@@ -23,7 +16,7 @@ st.set_page_config(
 
 # --- Estilos CSS Customizados ---
 css = """
-/* Estilos da aplicação... (mantidos como na versão anterior) */
+/* 1. Aplica a imagem de fundo com uma camada escura mais forte */
 .stApp {
     background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("https://i.imgur.com/B1m7gaE.jpeg");
     background-size: contain;
@@ -32,16 +25,29 @@ css = """
     background-attachment: fixed;
     background-color: #0c0c14;
 }
-[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stAppViewContainer"] > .main {
+
+/* 2. Remove o fundo branco padrão dos elementos do Streamlit */
+[data-testid="stHeader"], [data-testid="stToolbar"] {
     background: none;
 }
+
+[data-testid="stAppViewContainer"] > .main {
+    background: none;
+}
+
+/* 3. Ajusta a cor e adiciona sombra a todo o texto para garantir a legibilidade */
 h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .stMarkdown {
     color: #28a745 !important;
+    /* text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8); */ /* Sombra preta para contraste */
 }
+
+/* Garante que os captions do radio button também fiquem brancos e com sombra */
 [data-testid="stCaptionContainer"] {
     color: #E0E0E0 !important;
     text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8);
 }
+
+/* Estilo dos cards de conteúdo */
 .content-card {
     background-color: rgba(15, 23, 42, 0.7);
     border-radius: 15px;
@@ -51,7 +57,13 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
 }
-.title { display: none; }
+
+/* Estilo do título principal - removido para não sobrepor o texto da imagem */
+.title {
+   display: none;
+}
+
+/* Estilo do subtítulo */
 .subtitle {
     text-align: center;
     font-size: 1.2em;
@@ -59,12 +71,20 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     margin-bottom: 20px;
     padding-top: 250px;
 }
-#action-buttons-marker { display: none; }
+
+/* --- ESTILO UNIFICADO PARA OS BOTÕES DE AÇÃO --- */
+
+/* Esconde o marcador */
+#action-buttons-marker {
+    display: none;
+}
+
+/* Seleciona TODOS os botões na secção de ações e aplica o estilo "fantasma" verde */
 #action-buttons-marker + [data-testid="stHorizontalBlock"] button {
     background-color: transparent !important;
     background-image: none !important;
-    color: #28a745 !important;
-    border: 2px solid #28a745 !important;
+    color: #28a745 !important; /* Texto verde */
+    border: 2px solid #28a745 !important; /* Borda verde */
     border-radius: 25px !important;
     padding: 12px 30px !important;
     font-size: 1.1em !important;
@@ -73,11 +93,13 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     transition: all 0.3s ease !important;
 }
 #action-buttons-marker + [data-testid="stHorizontalBlock"] button:hover {
-    background-color: #28a745 !important;
-    color: #FFFFFF !important;
-    border-color: #28a745 !important;
+    background-color: #28a745 !important; /* Fundo verde sólido no hover */
+    color: #FFFFFF !important; /* Texto branco no hover */
+    border-color: #28a745 !important; /* Borda verde no hover */
     transform: translateY(-2px) !important;
 }
+
+/* Estilos para os botões de sugestão */
 .suggestion-buttons button {
     background-color: transparent !important;
     background-image: none !important;
@@ -89,17 +111,21 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
     border-radius: 15px !important;
     transition: all 0.3s ease !important;
 }
+
 .suggestion-buttons button:hover {
     background-color: rgba(52, 152, 219, 0.2) !important;
     border-color: #FFFFFF !important;
 }
+
+
+/* Estilos para o formulário HTML */
 .feedback-form input, .feedback-form select, .feedback-form textarea {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    color: #000000;
+    color: #000000; /* Texto preto para os campos do formulário */
 }
 .feedback-form button {
     width: 100%;
@@ -114,8 +140,9 @@ h1, h2, h3, h4, h5, h6, p, .stRadio, .stTextArea, .stSelectbox, .stTextInput, .s
 """
 st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
-# --- Configuração das API Keys e Firebase (lendo dos Secrets) ---
-def get_api_keys_from_secrets():
+
+# --- Configuração das API Keys e Firebase ---
+def get_api_keys():
     keys = {}
     try:
         keys['google'] = st.secrets["GOOGLE_API_KEY"]
@@ -123,23 +150,26 @@ def get_api_keys_from_secrets():
         keys['formspree'] = st.secrets["FORMSPREE_ENDPOINT"]
         keys['firebase_credentials'] = st.secrets["firebase"]["credentials"]
         keys['firebase_database_url'] = st.secrets["firebase"]["databaseURL"]
+        keys['ga_measurement_id'] = st.secrets.get("GA_MEASUREMENT_ID")
     except (FileNotFoundError, KeyError):
         st.sidebar.header("🔑 Configuração de API Keys")
-        st.sidebar.warning("Uma ou mais chaves não foram encontradas nos Segredos do Streamlit.")
+        keys['google'] = st.sidebar.text_input("Sua Google API Key", type="password")
+        keys['unsplash'] = st.sidebar.text_input("Sua Unsplash API Key", type="password")
+        keys['formspree'] = st.sidebar.text_input("Seu Endpoint do Formspree", type="password")
+        st.sidebar.warning("A configuração do Firebase e Analytics só funciona em produção.")
     return keys
 
-api_keys = get_api_keys_from_secrets()
+api_keys = get_api_keys()
 google_api_key = api_keys.get('google')
 unsplash_api_key = api_keys.get('unsplash')
 formspree_endpoint = api_keys.get('formspree')
-firebase_creds = api_keys.get('firebase_credentials')
-firebase_url = api_keys.get('firebase_database_url')
-
+ga_measurement_id = api_keys.get('ga_measurement_id')
 
 # --- Injetar Google Analytics ---
 def inject_ga(measurement_id):
-    if measurement_id and measurement_id != "G-SQNHZX78S0":
+    if measurement_id:
         ga_script = f"""
+            <!-- Google tag (gtag.js) -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
             <script>
               window.dataLayer = window.dataLayer || [];
@@ -150,7 +180,7 @@ def inject_ga(measurement_id):
         """
         st.html(ga_script)
 
-inject_ga(GA_MEASUREMENT_ID)
+inject_ga(ga_measurement_id)
 
 
 # --- Lógica do Firebase (Contador e Avaliações) ---
@@ -203,9 +233,9 @@ def handle_rating(rating_type, user_input=None, response_data=None):
     except Exception as e:
         print(f"Erro ao guardar a avaliação '{rating_type}': {e}")
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=30) # Cache dos resultados por 30 segundos
 def get_app_stats():
-    """Busca todas as estatísticas da aplicação."""
+    """Busca todas as estatísticas da aplicação (visitas, mensagens, avaliações)."""
     try:
         if firebase_admin._apps:
             stats_ref = db.reference('stats')
@@ -224,15 +254,30 @@ def get_app_stats():
 
 # Inicializa o Firebase e gere o estado da conexão
 firebase_status = "Não Configurado"
+app_stats = {"visits": 0, "messages": 0, "likes": 0, "dislikes": 0}
+firebase_creds = api_keys.get('firebase_credentials')
+firebase_url = api_keys.get('firebase_database_url')
+
 if firebase_creds and firebase_url:
     firebase_status = init_firebase_app(firebase_creds, firebase_url)
+    if firebase_status == "Conectado":
+        if 'visitor_counted' not in st.session_state:
+            st.session_state.total_visits = increment_and_get_visitor_count()
+            st.session_state.visitor_counted = True
+        app_stats = get_app_stats()
 
-app_stats = {}
-if firebase_status == "Conectado":
-    if 'visitor_counted' not in st.session_state:
-        st.session_state.total_visits = increment_and_get_visitor_count()
-        st.session_state.visitor_counted = True
-    app_stats = get_app_stats()
+# Adiciona os indicadores de estado na barra lateral
+if firebase_creds and firebase_url:
+    if firebase_status == "Conectado":
+        st.sidebar.success("✅ Base de Dados: Ativa")
+    else:
+        st.sidebar.error("❌ Base de Dados: Falhou")
+        st.sidebar.caption(f"Detalhe: {firebase_status}")
+
+if ga_measurement_id:
+    st.sidebar.success("✅ Analytics: Ativo")
+else:
+    st.sidebar.warning("⚠️ Analytics: Não Configurado")
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
@@ -284,9 +329,11 @@ def buscar_imagem_no_unsplash(api_key, keywords):
 st.markdown('<p class="title"></p>', unsafe_allow_html=True) 
 st.markdown('<p class="subtitle">Seu assistente pessoal para bem-estar interior e reflexão.</p>', unsafe_allow_html=True)
 
+# Inicializa o estado da sessão para a caixa de texto
 if 'sentimento_input' not in st.session_state:
     st.session_state.sentimento_input = ""
 
+# Funções para atualizar a caixa de texto
 def set_text_conforto():
     st.session_state.sentimento_input = "Estou a passar por um momento difícil e sinto-me um pouco triste."
 def set_text_inspiracao():
@@ -326,6 +373,7 @@ with col_controles:
     )
 
 
+# --- Botões de Ação Principal ---
 _, col_botoes_acao, _ = st.columns([1, 2, 1])
 with col_botoes_acao:
     st.markdown('<div id="action-buttons-marker"></div>', unsafe_allow_html=True)
@@ -341,21 +389,26 @@ with col_botoes_acao:
         if st.button("✨ Me Surpreenda", use_container_width=True, key="surprise_button"):
             st.session_state.acao = ("gerar", "Preciso de uma mensagem de sabedoria e inspiração para o meu dia")
 
+# Lógica para gerar a mensagem baseada na ação do botão
 if 'acao' in st.session_state:
     acao_tipo, texto_para_ia = st.session_state.acao
-    del st.session_state.acao
+    del st.session_state.acao # Limpa a ação para evitar re-execução
 
-    conteudo_gerado = None
-    with st.spinner("Conectando-se com a sabedoria do universo..."):
-        conteudo_gerado = gerar_conteudo_espiritual(google_api_key, texto_para_ia, tom)
-    
-    if conteudo_gerado:
-        increment_message_count()
-        get_app_stats.clear()
-        st.session_state.last_response = conteudo_gerado
-        st.session_state.last_input = texto_para_ia
-        st.session_state.rated = False
+    if not google_api_key or not unsplash_api_key:
+        st.error("Por favor, configure as chaves de API na barra lateral.")
+    else:
+        conteudo_gerado = None
+        with st.spinner("Conectando-se com a sabedoria do universo..."):
+            conteudo_gerado = gerar_conteudo_espiritual(google_api_key, texto_para_ia, tom)
+        
+        if conteudo_gerado:
+            increment_message_count()
+            get_app_stats.clear()
+            st.session_state.last_response = conteudo_gerado
+            st.session_state.last_input = texto_para_ia
+            st.session_state.rated = False
 
+# --- Exibição do Conteúdo Gerado ---
 if 'last_response' in st.session_state:
     conteudo_gerado = st.session_state.last_response
     st.success("Aqui está uma mensagem para você:")
@@ -378,6 +431,7 @@ if 'last_response' in st.session_state:
         else:
             st.warning("Não foi possível encontrar uma imagem reflexiva no momento.")
 
+    # --- Seção de Avaliação da Resposta (Like/Dislike) ---
     if not st.session_state.get('rated', False):
         st.write("A resposta foi útil?")
         r_col1, r_col2, r_col3 = st.columns([1,1,5])
@@ -395,11 +449,12 @@ if 'last_response' in st.session_state:
         st.info("Obrigado pelo seu feedback sobre esta mensagem!")
 
 
+# --- Seção de Feedback Geral ---
+st.markdown("---")
 _, col_form, _ = st.columns([1, 2, 1])
 with col_form:
     st.subheader("💬 Deixe seu Feedback Geral")
-    # --- CORREÇÃO AQUI: Usa a variável correta (lowercase) ---
-    if formspree_endpoint and formspree_endpoint != "COLE_O_SEU_ENDPOINT_DO_FORMSPREE_AQUI":
+    if formspree_endpoint:
         form_html = f"""
         <div class="feedback-form">
             <form action="{formspree_endpoint}" method="POST">
@@ -416,26 +471,29 @@ with col_form:
     else:
         st.warning("A funcionalidade de feedback não está configurada.")
 
+# --- Rodapé ---
 st.markdown("---")
+# Exibe as estatísticas da aplicação
 if firebase_status == "Conectado":
     stats_html = f"""
     <div style='text-align: center; font-size: 1em; color: #FFFFFF;'>
-        👁️ Visitas: <strong>{app_stats.get('visits', 0)}</strong> &nbsp;&nbsp;&nbsp; ✉️ Mensagens Geradas: <strong>{app_stats.get('messages', 0)}</strong>
+        👁️ Visitas: <strong>{app_stats['visits']}</strong> &nbsp;&nbsp;&nbsp; ✉️ Mensagens Geradas: <strong>{app_stats['messages']}</strong>
     </div>
     """
     st.markdown(stats_html, unsafe_allow_html=True)
 
-    total_ratings = app_stats.get('likes', 0) + app_stats.get('dislikes', 0)
+    total_ratings = app_stats['likes'] + app_stats['dislikes']
     if total_ratings > 0:
-        satisfaction_rate = app_stats.get('likes', 0) / total_ratings
+        satisfaction_rate = app_stats['likes'] / total_ratings
         st.markdown(f"""
         <div style='text-align: center; font-size: 1em; color: #FFFFFF; margin-top: 10px;'>
             <strong>Taxa de Satisfação ({total_ratings} avaliações)</strong><br>
-            👍 {app_stats.get('likes', 0)} Gostaram &nbsp;&nbsp;&nbsp; 👎 {app_stats.get('dislikes', 0)} Não Gostaram
+            👍 {app_stats['likes']} Gostaram &nbsp;&nbsp;&nbsp; 👎 {app_stats['dislikes']} Não Gostaram
         </div>
         """, unsafe_allow_html=True)
         st.progress(satisfaction_rate)
 
+# --- NOVA SEÇÃO: Sobre o Criador ---
 st.markdown("---")
 _, col_creator, _ = st.columns([1, 2, 1])
 with col_creator:
