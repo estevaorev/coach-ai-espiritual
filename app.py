@@ -138,7 +138,7 @@ firebase_url = api_keys.get('firebase_database_url')
 
 # --- Injetar Google Analytics ---
 def inject_ga(measurement_id):
-    if measurement_id and measurement_id != "COLE_O_SEU_ID_DE_METRICA_GA_AQUI":
+    if measurement_id and measurement_id != "G-SQNHZX78S0":
         ga_script = f"""
             <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
             <script>
