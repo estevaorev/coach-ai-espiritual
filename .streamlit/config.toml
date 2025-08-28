@@ -1,0 +1,15 @@
+[theme]
+# Cor principal para botões e elementos interativos (Verde)
+primaryColor="#28a745"
+
+# Cor do fundo da aplicação (não será usada por causa da nossa imagem, mas é bom ter)
+backgroundColor="#0c0c14"
+
+# Cor de fundo secundária (para a barra lateral)
+secondaryBackgroundColor="#1c2833"
+
+# Cor do texto principal (Branco)
+textColor="#FFFFFF"
+
+# Fonte padrão
+font="sans serif"
