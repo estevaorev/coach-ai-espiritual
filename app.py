@@ -11,7 +11,7 @@ from datetime import datetime
 # Apenas o GA_MEASUREMENT_ID está definido diretamente para o teste.
 # As outras chaves continuarão a ser lidas a partir dos Segredos do Streamlit.
 
-GA_MEASUREMENT_ID = "G-SQNHZX78S0" # Ex: "G-XXXXXXXXXX"
+GA_MEASUREMENT_ID = "COLE_O_SEU_ID_DE_METRICA_GA_AQUI" # Ex: "G-XXXXXXXXXX"
 
 
 # --- Configuração da Página ---
@@ -347,7 +347,7 @@ if 'acao' in st.session_state:
 
     conteudo_gerado = None
     with st.spinner("Conectando-se com a sabedoria do universo..."):
-        conteudo_gerado = gerar_conteudo_espiritual(GOOGLE_API_KEY, texto_para_ia, tom)
+        conteudo_gerado = gerar_conteudo_espiritual(google_api_key, texto_para_ia, tom)
     
     if conteudo_gerado:
         increment_message_count()
@@ -369,7 +369,7 @@ if 'last_response' in st.session_state:
     with col_imagem:
         image_url = None
         with st.spinner("Buscando uma imagem para sua reflexão..."):
-            image_url = buscar_imagem_no_unsplash(UNSPLASH_API_KEY, conteudo_gerado["keywords"])
+            image_url = buscar_imagem_no_unsplash(unsplash_api_key, conteudo_gerado["keywords"])
         if image_url:
             st.markdown(f"""<div class="content-card">
                 <img src="{image_url}" style="border-radius: 10px; width: 100%;">
@@ -398,10 +398,11 @@ if 'last_response' in st.session_state:
 _, col_form, _ = st.columns([1, 2, 1])
 with col_form:
     st.subheader("💬 Deixe seu Feedback Geral")
-    if FORMSPREE_ENDPOINT != "COLE_O_SEU_ENDPOINT_DO_FORMSPREE_AQUI":
+    # --- CORREÇÃO AQUI: Usa a variável correta (lowercase) ---
+    if formspree_endpoint and formspree_endpoint != "COLE_O_SEU_ENDPOINT_DO_FORMSPREE_AQUI":
         form_html = f"""
         <div class="feedback-form">
-            <form action="{FORMSPREE_ENDPOINT}" method="POST">
+            <form action="{formspree_endpoint}" method="POST">
                 <input tabindex="-1" type="email" name="email" placeholder="Seu e-mail (opcional)">
                 <select tabindex="-1" name="tipo">
                     <option>Elogio</option><option>Crítica Construtiva</option><option>Sugestão de Melhoria</option><option>Relatar um Erro</option>
