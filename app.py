@@ -179,7 +179,7 @@ def inject_ga(measurement_id):
               gtag('config', '{measurement_id}');
             </script>
         """
-        st.html(ga_script) # --- ALTERAÇÃO AQUI: Usa st.html() ---
+        st.html(ga_script)
 
 # Injeta o script do Google Analytics no início da aplicação
 inject_ga(ga_measurement_id)
@@ -268,13 +268,19 @@ if firebase_creds and firebase_url:
             st.session_state.visitor_counted = True
         app_stats = get_app_stats()
 
-# Adiciona o indicador de estado na barra lateral
+# Adiciona os indicadores de estado na barra lateral
 if firebase_creds and firebase_url:
     if firebase_status == "Conectado":
         st.sidebar.success("✅ Base de Dados: Ativa")
     else:
         st.sidebar.error("❌ Base de Dados: Falhou")
         st.sidebar.caption(f"Detalhe: {firebase_status}")
+
+# --- NOVO: Indicador de estado do Google Analytics ---
+if ga_measurement_id:
+    st.sidebar.success("✅ Analytics: Ativo")
+else:
+    st.sidebar.warning("⚠️ Analytics: Não Configurado")
 
 
 # --- Lógica do Modelo de Texto (Gemini) ---
